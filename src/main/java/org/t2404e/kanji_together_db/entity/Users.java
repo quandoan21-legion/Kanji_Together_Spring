@@ -6,46 +6,61 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.List;
-import com.fasterxml.jackson.annotation.JsonProperty;
+
 @Entity
 @Table(name = "users")
 @Data
 public class Users {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
-    public String name;
-    @Column(unique = true)
-    public String email;
-    @JsonProperty("has_entrance_exam")
-    public Boolean has_entrance_exam;
-    @JsonProperty("is_active")
-    public Boolean is_active;
-    @JsonProperty("is_verified")
-    public Boolean is_verified;
+    private Long id;
 
+    @Column(nullable = false)
+    private String name;
+
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    @Column(name = "has_entrance_exam")
+    private Boolean hasEntranceExam;
+
+    // Biến chuẩn camelCase, map cột snake_case
+    @Column(name = "is_active")
+    private Boolean isActive;
+
+    @Column(name = "is_verified")
+    private Boolean isVerified;
+
+    // --- TIMESTAMP FIELDS ---
     @UpdateTimestamp
-    public LocalDateTime edit_at;
+    @Column(name = "edit_at")
+    private LocalDateTime editAt;
 
+    // Map cột create_by (kiểu timestamp trong DB của bạn)
     @CreationTimestamp
-    @Column(updatable = false)
-    public LocalDateTime create_by;
+    @Column(name = "create_by", updatable = false)
+    private LocalDateTime createBy;
 
+    // Map cột edit_by (kiểu timestamp trong DB của bạn)
     @UpdateTimestamp
-    public LocalDateTime edit_by;
+    @Column(name = "edit_by")
+    private LocalDateTime editBy;
+
+    // --- RELATIONSHIPS ---
+    @ManyToOne
+    @JoinColumn(name = "clazz_id")
+    private Clazz clazz;
+
+    // Các relationship khác (giữ nguyên nếu không dùng đến trong API này)
+    @OneToMany(mappedBy = "user")
+    private List<UserSubscriptions> userSubscriptions;
 
     @OneToMany(mappedBy = "user")
-    public List<UserSubscriptions> user_subscriptions;
-
-    @OneToMany(mappedBy = "user")
-    public List<Transactions> transactions;
+    private List<Transactions> transactions;
 
     @ManyToMany(mappedBy = "users")
-    public List<Clazz> classes;
-
-    @ManyToMany(mappedBy = "users")
-    public List<Categories> categories;
+    private List<Categories> categories;
 
     @OneToMany(mappedBy = "user")
-    public List<ExamResults> exam_results;
+    private List<ExamResults> examResults;
 }

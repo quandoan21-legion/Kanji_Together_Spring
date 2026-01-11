@@ -1,61 +1,52 @@
 package org.t2404e.kanji_together_db.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.t2404e.kanji_together_db.entity.Users;
+import org.t2404e.kanji_together_db.dto.ApiResponse;
+import org.t2404e.kanji_together_db.dto.UserDTO;
 import org.t2404e.kanji_together_db.service.UserService;
+
 import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
+
     @Autowired
     private UserService userService;
 
-    // 1. GET: Lấy danh sách users
+    // 1. GET ALL
     @GetMapping
-    public List<Users> getAllUsers() {
-        return userService.getAllUsers();
+    public ResponseEntity<ApiResponse<List<UserDTO>>> getAllUsers() {
+        return ResponseEntity.ok(new ApiResponse<>(200, "Thành công", userService.getAllUsers()));
     }
 
-    // 2. GET: Lấy chi tiết 1 user
+    // 2. GET DETAIL
     @GetMapping("/{id}")
-    public ResponseEntity<Users> getUserById(@PathVariable Long id) {
-        return userService.getUserById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<ApiResponse<UserDTO>> getUserById(@PathVariable Long id) {
+        return ResponseEntity.ok(new ApiResponse<>(200, "Thành công", userService.getUserById(id)));
     }
 
-    // 3. POST: Tạo user mới
+    // 3. POST CREATE (Quan trọng nhất cho ticket này)
     @PostMapping
-    public ResponseEntity<?> createUser(@RequestBody Users user) {
-        try {
-            Users newUser = userService.createUser(user);
-            return ResponseEntity.ok(newUser);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<ApiResponse<UserDTO>> createUser(@Valid @RequestBody UserDTO request) {
+        UserDTO newUser = userService.createUser(request);
+        return new ResponseEntity<>(new ApiResponse<>(201, "Tạo User thành công", newUser), HttpStatus.CREATED);
     }
 
-    // 4. PUT: Cập nhật user
+    // 4. PUT UPDATE
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Users userDetails) {
-        try {
-            Users updatedUser = userService.updateUser(id, userDetails);
-            return ResponseEntity.ok(updatedUser);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<ApiResponse<UserDTO>> updateUser(@PathVariable Long id, @RequestBody UserDTO request) {
+        return ResponseEntity.ok(new ApiResponse<>(200, "Cập nhật thành công", userService.updateUser(id, request)));
     }
 
-    // 5. DELETE: Xóa userr
+    // 5. DELETE
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
-        try {
-            userService.softDeleteUser(id);
-            return ResponseEntity.ok().body("Đã xóa user thành công ");
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
+        userService.softDeleteUser(id);
+        return ResponseEntity.ok(new ApiResponse<>(200, "Xóa user thành công (Soft Delete)", null));
     }
 }

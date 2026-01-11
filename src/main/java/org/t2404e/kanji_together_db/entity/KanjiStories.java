@@ -1,10 +1,10 @@
 package org.t2404e.kanji_together_db.entity;
+
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "kanji_stories")
@@ -12,21 +12,32 @@ import java.util.List;
 public class KanjiStories {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
+    private Long id;
 
-    public Integer kanji_int;
-    public String kanji_stories;
+    // Tên cột trong DB của bạn là kanji_story
+    @Column(name = "kanji_story", length = 255)
+    private String kanjiStory;
 
+    // --- Audit Fields ---
     @CreationTimestamp
-    public LocalDateTime create_at;
+    @Column(name = "create_at", updatable = false)
+    private LocalDateTime createAt;
 
     @UpdateTimestamp
-    public LocalDateTime edit_at;
+    @Column(name = "edit_at")
+    private LocalDateTime editAt;
 
-    public Integer create_by;
-    public Integer edit_by;
+    @Column(name = "create_by")
+    private Integer createBy;
 
-    // Quan hệ N-N với Categories
-    @ManyToMany(mappedBy = "stories")
-    public List<Categories> categories;
+    @Column(name = "edit_by")
+    private Integer editBy;
+
+    @Column(name = "is_active")
+    private Boolean isActive;
+
+    // Quan hệ N-1: Thuộc về 1 Kanji
+    @ManyToOne
+    @JoinColumn(name = "kanji_id", nullable = false)
+    private KanjiCharacters kanjiCharacter;
 }

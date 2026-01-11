@@ -14,23 +14,39 @@ import java.util.List;
 public class KanjiLessons {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
+    private Long id; // Nên để private
 
-    @Column(length = 10)
-    public String kanji;
+    // Map với cột tên bài học trong DB (ví dụ: name)
+    @Column(name = "name")
+    private String name;
 
-    public Integer JLPT;
-    public String lesson_description;
+    @Column(name = "JLPT")
+    private Integer jlpt;
 
-    @ManyToMany(mappedBy = "lessons")
-    public List<KanjiCharacters> kanji_characters;
+    @Column(name = "lesson_description")
+    private String lessonDescription;
+
+    // --- SỬA LỖI TẠI ĐÂY ---
+    // Xóa mappedBy, thêm JoinTable để kết nối bảng trung gian
+    @ManyToMany
+    @JoinTable(
+            name = "kanji_characters_rel_lesson",
+            joinColumns = @JoinColumn(name = "lesson_id"),
+            inverseJoinColumns = @JoinColumn(name = "kanji_id")
+    )
+    private List<KanjiCharacters> kanjiCharacters;
 
     @CreationTimestamp
-    public LocalDateTime create_at;
+    @Column(name = "create_at", updatable = false)
+    private LocalDateTime createAt;
 
     @UpdateTimestamp
-    public LocalDateTime edit_at;
+    @Column(name = "edit_at")
+    private LocalDateTime editAt;
 
-    public Integer create_by;
-    public Integer edit_by;
+    @Column(name = "create_by")
+    private Integer createBy;
+
+    @Column(name = "edit_by")
+    private Integer editBy;
 }

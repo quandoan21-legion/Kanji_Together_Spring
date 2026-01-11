@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.t2404e.kanji_together_db.enums.QuestionType;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,32 +13,41 @@ import java.util.List;
 public class Questions {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
+    private Long id;
 
+    @Column(length = 255)
+    private String name;
+
+    @Column(name = "question")
+    private String questionText;
+
+    // --- SỬA LỖI TẠI ĐÂY (Thêm đoạn này vào) ---
+    // Biến này tên là "exam" -> Khớp với mappedBy = "exam" bên file Exams
     @ManyToOne
-    @JoinColumn(name = "exam_id")
-    public Exams exam;
+    @JoinColumn(name = "exam_id") // Tên cột khóa ngoại trong DB
+    private Exams exam;
 
-    public String name;
-    public String question;
+    // --- Quan hệ với KanjiCharacters (Đã làm đúng ở bước trước - Giữ nguyên) ---
+    @ManyToMany
+    @JoinTable(
+            name = "kanji_characters_rel_question",
+            joinColumns = @JoinColumn(name = "question_id"),
+            inverseJoinColumns = @JoinColumn(name = "kanji_id")
+    )
+    private List<KanjiCharacters> kanjiCharacters;
 
-    @Enumerated(EnumType.STRING)
-    public QuestionType question_type;
-
-    public Integer kanji_related_id;
-
-    @OneToMany(mappedBy = "question")
-    public List<QuestionAnswers> answers;
-
-    @ManyToMany(mappedBy = "questions")
-    public List<KanjiCharacters> kanji_characters;
-
+    // --- Audit Fields ---
     @CreationTimestamp
-    public LocalDateTime create_at;
+    @Column(name = "create_at", updatable = false)
+    private LocalDateTime createAt;
 
     @UpdateTimestamp
-    public LocalDateTime edit_at;
+    @Column(name = "edit_at")
+    private LocalDateTime editAt;
 
-    public Integer create_by;
-    public Integer edit_by;
+    @Column(name = "create_by")
+    private Integer createBy;
+
+    @Column(name = "edit_by")
+    private Integer editBy;
 }
