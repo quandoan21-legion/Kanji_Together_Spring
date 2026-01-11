@@ -1,35 +1,44 @@
 package org.t2404e.kanji_together_db.entity;
+
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.t2404e.kanji_together_db.enums.ExamType;
-
 import java.time.LocalDateTime;
 import java.util.List;
+
 @Entity
 @Table(name = "exams")
 @Data
 public class Exams {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
+    private Long id;
 
-    public String name;
-    public String question;
+    @Column(nullable = false)
+    private String name;
 
-    @Enumerated(EnumType.STRING)
-    public ExamType exam_type;
+    // Ví dụ các cột khác của bạn
+    // private String question;
+    // private String examType;
 
-    @OneToMany(mappedBy = "exam")
-    public List<Questions> questions;
+    // --- QUAN HỆ VỚI QUESTIONS ---
+    // mappedBy="exam" trỏ tới biến "private Exams exam;" ở file Questions
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
+    private List<Questions> questions;
 
+    // --- Audit Fields ---
     @CreationTimestamp
-    public LocalDateTime create_at;
+    @Column(name = "create_at", updatable = false)
+    private LocalDateTime createAt;
 
     @UpdateTimestamp
-    public LocalDateTime edit_at;
+    @Column(name = "edit_at")
+    private LocalDateTime editAt;
 
-    public Integer create_by;
-    public Integer edit_by;
+    @Column(name = "create_by")
+    private Integer createBy;
+
+    @Column(name = "edit_by")
+    private Integer editBy;
 }

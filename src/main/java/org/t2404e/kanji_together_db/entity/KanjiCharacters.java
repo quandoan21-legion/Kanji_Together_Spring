@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,46 +13,57 @@ import java.util.List;
 public class KanjiCharacters {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
+    private Long id;
 
-    @Column(length = 10)
-    public String kanji;
+    @Column(nullable = false, length = 10, unique = true)
+    private String kanji;
 
-    @Column(length = 10)
-    public String on_pronuncication;
+    @Column(name = "on_pronunciation")
+    private String onPronunciation;
 
-    @Column(length = 10)
-    public String kun_pronuncication;
+    @Column(name = "kun_pronunciation")
+    private String kunPronunciation;
 
-    public Integer num_strokes;
-    public Integer JLPT;
-    public String kanji_description;
+    @Column(name = "num_strokes")
+    private Integer numStrokes;
 
+    @Column(name = "JLPT")
+    private Integer jlpt;
+
+    @Column(name = "kanji_description")
+    private String kanjiDescription;
+
+    @Column(name = "is_active")
+    private Boolean isActive;
+
+    @Column(name = "translation")
+    private String translation;
+
+
+    // --- QUAN HỆ VỚI LESSONS (Thêm mới) ---
+    // mappedBy phải trùng tên với biến "kanjiCharacters" bên file KanjiLessons
+    @ManyToMany(mappedBy = "kanjiCharacters")
+    private List<KanjiLessons> lessons;
+
+    // Quan hệ 1-N với Stories (giữ nguyên)
+    @OneToMany(mappedBy = "kanjiCharacter", cascade = CascadeType.ALL)
+    private List<KanjiStories> stories;
+
+    // 2. QUAN HỆ VỚI QUESTIONS (THÊM MỚI ĐOẠN NÀY)
+    @ManyToMany(mappedBy = "kanjiCharacters")
+    private List<Questions> questions;
+    // --- Audit Fields ---
     @CreationTimestamp
-    @Column(updatable = false)
-    public LocalDateTime create_at;
+    @Column(name = "create_at", updatable = false)
+    private LocalDateTime createAt;
 
     @UpdateTimestamp
-    public LocalDateTime edit_at;
+    @Column(name = "edit_at")
+    private LocalDateTime editAt;
 
-    public Integer create_by;
-    public Integer edit_by;
+    @Column(name = "create_by")
+    private Integer createBy;
 
-    // Quan hệ N-N với Lesson
-    @ManyToMany
-    @JoinTable(
-            name = "kanji_characters_rel_lesson",
-            joinColumns = @JoinColumn(name = "kanji_id"),
-            inverseJoinColumns = @JoinColumn(name = "lesson_id")
-    )
-    public List<KanjiLessons> lessons;
-
-    // Quan hệ N-N với Question
-    @ManyToMany
-    @JoinTable(
-            name = "kanji_characters_rel_question",
-            joinColumns = @JoinColumn(name = "kanji_id"),
-            inverseJoinColumns = @JoinColumn(name = "question_id")
-    )
-    public List<Questions> questions;
+    @Column(name = "edit_by")
+    private Integer editBy;
 }
