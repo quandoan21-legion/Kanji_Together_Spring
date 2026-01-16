@@ -32,30 +32,25 @@ public class KanjiCharactersService {
 
     // 3. CREATE (SỬA LOGIC: Khôi phục nếu đã xóa mềm)
     public KanjiCharacterDTO create(KanjiCharacterDTO dto) {
-        // Tìm xem chữ Kanji này đã có trong DB chưa
         Optional<KanjiCharacters> existingOpt = repository.findByKanji(dto.getKanji());
 
         KanjiCharacters entity;
 
         if (existingOpt.isPresent()) {
-            // TRƯỜNG HỢP: Đã có trong DB
             KanjiCharacters existing = existingOpt.get();
 
-            // Nếu đang HOẠT ĐỘNG -> Báo lỗi trùng lặp (Bad Request)
             if (Boolean.TRUE.equals(existing.getIsActive())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "Chữ Kanji '" + dto.getKanji() + "' đã tồn tại và đang hoạt động!");
             }
 
-            // Nếu đang BỊ XÓA (Inactive) -> Tận dụng lại bản ghi cũ để khôi phục
             entity = existing;
         } else {
-            // TRƯỜNG HỢP: Chưa có trong DB -> Tạo mới hoàn toàn
             entity = new KanjiCharacters();
             entity.setKanji(dto.getKanji());
         }
 
-        // Cập nhật thông tin mới (cho cả trường hợp tạo mới hoặc khôi phục)
+        // ============ BỔ SUNG CÁC TRƯỜNG CÒN THIẾU ============
         entity.setOnPronunciation(dto.getOnPronunciation());
         entity.setKunPronunciation(dto.getKunPronunciation());
         entity.setNumStrokes(dto.getNumStrokes());
@@ -63,8 +58,13 @@ public class KanjiCharactersService {
         entity.setKanjiDescription(dto.getKanjiDescription());
         entity.setTranslation(dto.getTranslation());
 
+        // ✅ THÊM CÁC TRƯỜNG NÀY (đây là nguyên nhân!)
+        entity.setMeaning(dto.getMeaning());
+        entity.setRadical(dto.getRadical());
+        entity.setComponents(dto.getComponents());
+        entity.setWritingImageUrl(dto.getWritingImageUrl());
+        // ======================================================
 
-        // QUAN TRỌNG: Luôn set Active = TRUE khi tạo mới hoặc khôi phục
         entity.setIsActive(true);
 
         return mapToDTO(repository.save(entity));
@@ -79,13 +79,10 @@ public class KanjiCharactersService {
         if (dto.getKanji() != null && !dto.getKanji().equals(entity.getKanji())) {
             Optional<KanjiCharacters> existingKanji = repository.findByKanji(dto.getKanji());
 
-            // Nếu tên mới trùng với một chữ đã có
             if (existingKanji.isPresent()) {
-                // Nếu chữ kia đang Active -> Báo lỗi
                 if (Boolean.TRUE.equals(existingKanji.get().getIsActive())) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chữ Kanji '" + dto.getKanji() + "' đã được sử dụng!");
                 }
-                // (Nâng cao: Nếu chữ kia Inactive, có thể cho phép merge hoặc báo lỗi tùy nghiệp vụ. Ở đây mình báo lỗi cho an toàn)
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chữ Kanji '" + dto.getKanji() + "' đã tồn tại (đang bị ẩn). Vui lòng khôi phục nó thay vì sửa chữ này.");
             }
             entity.setKanji(dto.getKanji());
@@ -98,12 +95,19 @@ public class KanjiCharactersService {
         if (dto.getKanjiDescription() != null) entity.setKanjiDescription(dto.getKanjiDescription());
         if (dto.getTranslation() != null) entity.setTranslation(dto.getTranslation());
 
+        // ✅ BỔ SUNG CÁC TRƯỜNG CÒN THIẾU TRONG UPDATE
+        if (dto.getMeaning() != null) entity.setMeaning(dto.getMeaning());
+        if (dto.getRadical() != null) entity.setRadical(dto.getRadical());
+        if (dto.getComponents() != null) entity.setComponents(dto.getComponents());
+        if (dto.getWritingImageUrl() != null) entity.setWritingImageUrl(dto.getWritingImageUrl());
+        // ======================================================
+
         if (dto.getIsActive() != null) entity.setIsActive(dto.getIsActive());
 
         return mapToDTO(repository.save(entity));
     }
 
-    // 5. DELETE
+    // 5. DELETE (XÓA MỀM)
     public void delete(Long id) {
         KanjiCharacters entity = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Kanji để xóa"));
@@ -112,6 +116,7 @@ public class KanjiCharactersService {
         repository.save(entity);
     }
 
+    // ============ MAP TO DTO (BỔ SUNG CÁC TRƯỜNG) ============
     private KanjiCharacterDTO mapToDTO(KanjiCharacters entity) {
         KanjiCharacterDTO dto = new KanjiCharacterDTO();
         dto.setId(entity.getId());
@@ -122,6 +127,14 @@ public class KanjiCharactersService {
         dto.setJlpt(entity.getJlpt());
         dto.setKanjiDescription(entity.getKanjiDescription());
         dto.setTranslation(entity.getTranslation());
+
+
+        dto.setMeaning(entity.getMeaning());
+        dto.setRadical(entity.getRadical());
+        dto.setComponents(entity.getComponents());
+        dto.setWritingImageUrl(entity.getWritingImageUrl());
+        // ======================================================
+
         dto.setCreateAt(entity.getCreateAt());
         dto.setIsActive(entity.getIsActive());
         dto.setCreateBy(entity.getCreateBy());

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 @Data
@@ -12,26 +11,33 @@ public class KanjiStoryDTO {
     private Long id;
 
     @NotBlank(message = "Nội dung câu chuyện không được để trống")
-    @JsonProperty("kanji_story") // JSON sẽ trả về key là "kanji_story" cho khớp DB
+    @JsonProperty("kanji_story")
     private String kanjiStory;
 
     @NotNull(message = "Phải chỉ định ID của chữ Kanji")
     @JsonProperty("kanji_id")
     private Long kanjiId;
 
-    // Field này chỉ dùng để hiển thị tên Kanji cho tiện (Output only)
     @JsonProperty("kanji_text")
     private String kanjiText;
 
+
+    @JsonProperty("status")
+    private String status;
+
+    @JsonProperty("user_email")
+    private String userEmail;
+
     @JsonProperty("is_active")
     private Boolean isActive;
+
 
     @JsonProperty("create_at")
     private LocalDateTime createAt;
 
     @JsonProperty("create_by")
-    private Integer createBy; // ID người tạo
+    private Integer createBy;
 
     @JsonProperty("edit_by")
-    private Integer editBy;   // ID người sửa
+    private Integer editBy;
 }
