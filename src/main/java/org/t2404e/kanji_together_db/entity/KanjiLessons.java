@@ -16,7 +16,7 @@ public class KanjiLessons {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // Nên để private
 
-    // Map với cột tên bài học trong DB (ví dụ: name)
+    // Map với cột tên bài học trong DB (ví dụ: name) lamoo
     @Column(name = "name")
     private String name;
 
