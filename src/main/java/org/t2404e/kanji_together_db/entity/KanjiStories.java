@@ -14,11 +14,17 @@ public class KanjiStories {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Tên cột trong DB của bạn là kanji_story
-    @Column(name = "kanji_story", length = 255)
+    @Column(name = "kanji_story", columnDefinition = "TEXT") // Đổi sang TEXT để viết truyện dài
     private String kanjiStory;
 
-    // --- Audit Fields ---
+    // THÊM TRƯỜNG NÀY: Để lọc Chờ duyệt/Đã duyệt
+    @Column(name = "status")
+    private String status = "pending";
+
+    @ManyToOne
+    @JoinColumn(name = "user_id") // Đảm bảo tên cột trong MySQL là user_id
+    private Users user;
+
     @CreationTimestamp
     @Column(name = "create_at", updatable = false)
     private LocalDateTime createAt;
@@ -26,18 +32,14 @@ public class KanjiStories {
     @UpdateTimestamp
     @Column(name = "edit_at")
     private LocalDateTime editAt;
-
     @Column(name = "create_by")
     private Integer createBy;
-
-    @Column(name = "edit_by")
-    private Integer editBy;
-
     @Column(name = "is_active")
     private Boolean isActive;
-
-    // Quan hệ N-1: Thuộc về 1 Kanji
+    @Column(name = "edit_by")
+    private Integer editBy;
     @ManyToOne
     @JoinColumn(name = "kanji_id", nullable = false)
     private KanjiCharacters kanjiCharacter;
+
 }

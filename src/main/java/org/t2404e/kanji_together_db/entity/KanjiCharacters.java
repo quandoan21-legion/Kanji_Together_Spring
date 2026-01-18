@@ -39,9 +39,24 @@ public class KanjiCharacters {
     @Column(name = "translation")
     private String translation;
 
+    @Column(name = "meaning", columnDefinition = "TEXT")
+    private String meaning;
 
-    // --- QUAN HỆ VỚI LESSONS (Thêm mới) ---
-    // mappedBy phải trùng tên với biến "kanjiCharacters" bên file KanjiLessons
+    @Column(name = "writing_image_url")
+    private String writingImageUrl;
+
+    @Column(name = "components")
+    private String components;
+
+    @Column(name = "radical")
+    private String radical;
+
+    @Column(name = "vocabulary", columnDefinition = "TEXT")
+    private String vocabulary;
+
+    @Column(name = "examples", columnDefinition = "TEXT")
+    private String examples;
+
     @ManyToMany(mappedBy = "kanjiCharacters")
     private List<KanjiLessons> lessons;
 
@@ -49,10 +64,9 @@ public class KanjiCharacters {
     @OneToMany(mappedBy = "kanjiCharacter", cascade = CascadeType.ALL)
     private List<KanjiStories> stories;
 
-    // 2. QUAN HỆ VỚI QUESTIONS (THÊM MỚI ĐOẠN NÀY)
     @ManyToMany(mappedBy = "kanjiCharacters")
     private List<Questions> questions;
-    // --- Audit Fields ---
+    // --- Audit Fields ---1
     @CreationTimestamp
     @Column(name = "create_at", updatable = false)
     private LocalDateTime createAt;
