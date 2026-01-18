@@ -260,6 +260,9 @@ public class KanjiCharactersService {
             errors.put(field, "Vui lòng nhập dữ liệu");
         } else if (!content.matches(regex)) {
             errors.put(field, msg);
+        }
+    }
+
     private void validateKanjiOnly(KanjiCharacterDTO dto) {
         Map<String, String> errors = new HashMap<>();
 
