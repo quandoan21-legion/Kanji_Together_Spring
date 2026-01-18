@@ -34,6 +34,7 @@ public class KanjiCharactersService {
     }
 
     public KanjiCharacterDTO create(KanjiCharacterDTO dto) {
+        normalizeData(dto);
         validateKanjiData(dto);
 
         Optional<KanjiCharacters> existingOpt = repository.findByKanji(dto.getKanji());
@@ -58,6 +59,7 @@ public class KanjiCharactersService {
     }
 
     public KanjiCharacterDTO update(Long id, KanjiCharacterDTO dto) {
+        normalizeData(dto);
         validateKanjiData(dto);
 
         KanjiCharacters entity = repository.findById(id)
@@ -84,72 +86,119 @@ public class KanjiCharactersService {
         repository.save(entity);
     }
 
+    // --- HÀM TỰ ĐỘNG LÀM SẠCH ---
+    private void normalizeData(KanjiCharacterDTO dto) {
+        if (dto.getKanji() != null) dto.setKanji(dto.getKanji().trim());
+        if (dto.getTranslation() != null) dto.setTranslation(cleanText(dto.getTranslation()));
+        if (dto.getMeaning() != null) dto.setMeaning(cleanText(dto.getMeaning()));
+        if (dto.getRadical() != null) dto.setRadical(cleanText(dto.getRadical()));
+        if (dto.getComponents() != null) dto.setComponents(cleanText(dto.getComponents()));
+        if (dto.getVocabulary() != null) dto.setVocabulary(cleanText(dto.getVocabulary()));
+        if (dto.getExamples() != null) dto.setExamples(cleanText(dto.getExamples()));
+        if (dto.getKanjiDescription() != null) dto.setKanjiDescription(cleanText(dto.getKanjiDescription()));
+    }
+
+    private String cleanText(String input) {
+        if (input == null) return null;
+        return input.trim().replaceAll("[ \\t]+", " ");
+    }
+
     private void validateKanjiData(KanjiCharacterDTO dto) {
         Map<String, String> errors = new HashMap<>();
 
-        // 1. KIỂM TRA BẮT BUỘC NHẬP
-        if (isEmpty(dto.getKanji())) errors.put("kanji", "Vui lòng điền chữ Kanji");
-        if (isEmpty(dto.getTranslation())) errors.put("translation", "Vui lòng điền âm Hán Việt");
+        // 1. VALIDATE CƠ BẢN
+        if (isEmpty(dto.getKanji())) {
+            errors.put("kanji", "Vui lòng điền chữ Kanji");
+        } else if (!dto.getKanji().matches("^[\\u4E00-\\u9FAF]$")) {
+            errors.put("kanji", "Kanji phải là duy nhất 1 ký tự chữ Hán (VD: 休)");
+        }
+
+        if (isEmpty(dto.getTranslation())) {
+            errors.put("translation", "Vui lòng điền âm Hán Việt");
+        } else if (!dto.getTranslation().matches("^[A-ZÀ-Ỹ\\s]+$")) {
+            errors.put("translation", "Hán Việt phải viết HOA TOÀN BỘ (VD: 'HƯU')");
+        }
+
         if (dto.getJlpt() == null) errors.put("jlpt", "Vui lòng chọn cấp độ JLPT");
-        if (isEmpty(dto.getMeaning())) errors.put("meaning", "Vui lòng điền nghĩa tiếng Việt");
+        else if (dto.getJlpt() < 1 || dto.getJlpt() > 5) errors.put("jlpt", "Cấp độ JLPT phải từ N5 đến N1");
+
         if (dto.getNumStrokes() == null) errors.put("num_strokes", "Vui lòng điền số nét");
-        if (isEmpty(dto.getRadical())) errors.put("radical", "Vui lòng điền bộ thủ");
+        else if (dto.getNumStrokes() <= 0) errors.put("num_strokes", "Số nét phải lớn hơn 0");
+
         if (isEmpty(dto.getWritingImageUrl())) errors.put("writing_image_url", "Vui lòng điền URL ảnh cách viết");
+        else if (!dto.getWritingImageUrl().startsWith("http")) errors.put("writing_image_url", "Link ảnh phải bắt đầu bằng http/https");
+
+        if (isEmpty(dto.getMeaning())) errors.put("meaning", "Vui lòng điền nghĩa tiếng Việt");
+        if (isEmpty(dto.getRadical())) errors.put("radical", "Vui lòng điền bộ thủ");
         if (isEmpty(dto.getKanjiDescription())) errors.put("kanji_description", "Vui lòng điền câu chuyện ghi nhớ");
 
-        // --- 2. VALIDATE TỪ VỰNG (MỚI: Phải có 2 dấu gạch ngang) ---
+        // --- 2. VALIDATE TỪ VỰNG---
         if (isEmpty(dto.getVocabulary())) {
             errors.put("vocabulary", "Vui lòng nhập ít nhất 1 từ vựng");
         } else {
             String[] lines = dto.getVocabulary().split("\\r?\\n");
             for (String line : lines) {
                 if (line.trim().isEmpty()) continue;
-                // Regex: TỪ - PHIÊN ÂM - NGHĨA
-                if (!line.matches("^.+-.+-.+$")) {
-                    errors.put("vocabulary", "Sai định dạng dòng: '" + line + "'. Yêu cầu: [TỪ]-[PHIÊN ÂM]-[NGHĨA]");
+
+                String vocabRegex = "^[^-\\r\\n]*[\\u3000-\\u30FF\\u4E00-\\u9FAF]+[^-\\r\\n]*-[^-\\r\\n]+-[^-\\r\\n]+$";
+
+                if (!line.matches(vocabRegex)) {
+                    errors.put("vocabulary", "Dòng '" + line + "' sai cấu trúc. Yêu cầu: [TIẾNG NHẬT]-[PHIÊN ÂM]-[NGHĨA] (Đúng 2 dấu gạch ngang).");
                     break;
                 }
             }
         }
 
-        // --- 3. VALIDATE CÂU VÍ DỤ (MỚI: Phải có 1 dấu gạch ngang) ---
+        // --- 3. VALIDATE CÂU VÍ DỤ  ---
         if (isEmpty(dto.getExamples())) {
             errors.put("examples", "Vui lòng nhập ít nhất 1 câu ví dụ");
         } else {
             String[] lines = dto.getExamples().split("\\r?\\n");
             for (String line : lines) {
                 if (line.trim().isEmpty()) continue;
-                // Regex: CÂU - DỊCH
-                if (!line.matches("^.+-.+$")) {
-                    errors.put("examples", "Sai định dạng dòng: '" + line + "'. Yêu cầu: [CÂU NHẬT]-[DỊCH VIỆT]");
+
+                String exampleRegex = "^[^-\\r\\n]*[\\u3000-\\u30FF\\u4E00-\\u9FAF]+[^-\\r\\n]*-[^-\\r\\n]+$";
+
+                if (!line.matches(exampleRegex)) {
+                    errors.put("examples", "Dòng '" + line + "' sai cấu trúc. Yêu cầu: [CÂU CÓ CHỮ NHẬT]-[DỊCH VIỆT] (Đúng 1 dấu gạch ngang).");
                     break;
                 }
             }
         }
 
-        // --- 4. VALIDATE ON/KUN (Cấm dấu phẩy) ---
+        // 4. VALIDATE ON/KUN
         if (isEmpty(dto.getOnPronunciation())) {
             errors.put("on_pronunciation", "Vui lòng điền âm On");
         } else {
-            String onRegex = "^[\\u30A0-\\u30FF\\s.\\r\\n]+$";
-            if (!dto.getOnPronunciation().matches(onRegex)) {
-                errors.put("on_pronunciation", "Âm On chỉ được chứa Katakana, dấu chấm và xuống dòng (Không dùng dấu phẩy)");
+            if (!dto.getOnPronunciation().matches("^[\\u30A0-\\u30FF\\s.\\r\\n]+$")) {
+                errors.put("on_pronunciation", "Âm On chỉ được chứa Katakana, dấu chấm, xuống dòng");
             }
         }
 
         if (isEmpty(dto.getKunPronunciation())) {
             errors.put("kun_pronunciation", "Vui lòng điền âm Kun");
         } else {
-            String kunRegex = "^[\\u3040-\\u309F\\s.\\r\\n]+$";
-            if (!dto.getKunPronunciation().matches(kunRegex)) {
-                errors.put("kun_pronunciation", "Âm Kun chỉ được chứa Hiragana, dấu chấm và xuống dòng (Không dùng dấu phẩy)");
+            if (!dto.getKunPronunciation().matches("^[\\u3040-\\u309F\\s.\\r\\n]+$")) {
+                errors.put("kun_pronunciation", "Âm Kun chỉ được chứa Hiragana, dấu chấm, xuống dòng");
             }
         }
 
-        // --- 5. KIỂM TRA ĐỊNH DẠNG BỘ THỦ ---
-        String formatRegex = "^[\\u4E00-\\u9FAF]\\s+[A-ZÀ-Ỹ\\s]+$";
-        if (!isEmpty(dto.getRadical()) && !dto.getRadical().trim().matches(formatRegex)) {
-            errors.put("radical", "Định dạng đúng: [Chữ Hán] [Tên Hán Việt viết hoa] (VD: 鬯 SƯỞNG)");
+        // 5. VALIDATE BỘ THỦ
+        if (!isEmpty(dto.getRadical()) && !dto.getRadical().trim().matches("^[\\u4E00-\\u9FAF]\\s+[A-ZÀ-Ỹ\\s]+$")) {
+            errors.put("radical", "Định dạng đúng: [Chữ Hán] [Tên In Hoa Toàn Bộ] (VD: 鬯 SƯỞNG).");
+        }
+
+        // 6. VALIDATE BỘ THÀNH PHẦN
+        if (!isEmpty(dto.getComponents())) {
+            String[] lines = dto.getComponents().split("\\r?\\n");
+            for (String line : lines) {
+                if (line.trim().isEmpty()) continue;
+
+                if (!line.matches("^[^,\\p{S}\\d]\\s+\\p{Lu}[^,]*$")) {
+                    errors.put("components", "Dòng '" + line + "' sai. Yêu cầu: [Ký tự] [Viết hoa chữ đầu]. Không dùng dấu phẩy (hệ thống tự thêm).");
+                    break;
+                }
+            }
         }
 
         if (!errors.isEmpty()) {
