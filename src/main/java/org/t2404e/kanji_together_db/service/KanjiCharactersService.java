@@ -100,10 +100,8 @@ public class KanjiCharactersService {
 
     private String cleanText(String input) {
         if (input == null) return null;
-        // Gộp nhiều dấu cách/tab thành 1, nhưng giữ nguyên xuống dòng (\n)
         return input.trim().replaceAll("[ \\t]+", " ");
     }
-
     private void validateKanjiData(KanjiCharacterDTO dto) {
         Map<String, String> errors = new HashMap<>();
 
@@ -114,7 +112,7 @@ public class KanjiCharactersService {
             errors.put("kanji", "Kanji phải là duy nhất 1 ký tự chữ Hán (VD: 休)");
         }
 
-        // Hán Việt: Cho phép dấu phẩy
+        // Hán Việt
         if (isEmpty(dto.getTranslation())) {
             errors.put("translation", "Vui lòng điền âm Hán Việt");
         } else if (!dto.getTranslation().matches("^[A-ZÀ-Ỹ\\s,]+$")) {
@@ -186,24 +184,12 @@ public class KanjiCharactersService {
             errors.put("radical", "Định dạng đúng: [Chữ Hán] [Tên In Hoa Toàn Bộ] (VD: 鬯 SƯỞNG).");
         }
 
-        // --- 6. VALIDATE BỘ THÀNH PHẦN (NGHIÊM NGẶT - CẤM KÝ TỰ ĐẶC BIỆT) ---
+        // --- 6. VALIDATE BỘ THÀNH PHẦN ---
         if (!isEmpty(dto.getComponents())) {
             String[] lines = dto.getComponents().split("\\r?\\n");
             for (String line : lines) {
                 if (line.trim().isEmpty()) continue;
 
-                // Cấm dấu phẩy (dành cho hệ thống tự hiển thị)
-                if (line.contains(",")) {
-                    errors.put("components", "Dòng '" + line + "' chứa dấu phẩy. Vui lòng chỉ xuống dòng, hệ thống sẽ tự hiển thị dấu phẩy.");
-                    break;
-                }
-
-                // Regex Whitelist Siêu Cấp:
-                // ^ : Bắt đầu
-                // [^\\p{P}\\p{S}\\d] : Ký tự đầu tiên KHÔNG được là: Dấu câu (chấm, phẩy...), Ký hiệu (><...), Số.
-                // \\s+ : Dấu cách bắt buộc.
-                // \\p{Lu} : Chữ cái đầu tiên của tên phải VIẾT HOA.
-                // [^\\p{P}\\p{S}]* : Phần còn lại cấm tuyệt đối Dấu câu và Ký hiệu (nghĩa là cấm . , ? ! > <).
                 if (!line.matches("^[^\\p{P}\\p{S}\\d]\\s+\\p{Lu}[^\\p{P}\\p{S}]*$")) {
                     errors.put("components", "Dòng '" + line + "' chứa ký tự đặc biệt hoặc sai định dạng. Chỉ nhập: [Ký tự] [Tên viết hoa] (VD: '木 Mộc')");
                     break;
