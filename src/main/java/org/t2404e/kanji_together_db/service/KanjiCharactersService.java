@@ -86,7 +86,7 @@ public class KanjiCharactersService {
         repository.save(entity);
     }
 
-    // --- HÀM TỰ ĐỘNG LÀM SẠCH ---
+    // --- HÀM TỰ ĐỘNG LÀM SẠCH (Clean Data) ---
     private void normalizeData(KanjiCharacterDTO dto) {
         if (dto.getKanji() != null) dto.setKanji(dto.getKanji().trim());
         if (dto.getTranslation() != null) dto.setTranslation(cleanText(dto.getTranslation()));
@@ -100,6 +100,7 @@ public class KanjiCharactersService {
 
     private String cleanText(String input) {
         if (input == null) return null;
+        // Gộp nhiều dấu cách/tab thành 1, nhưng giữ nguyên xuống dòng (\n)
         return input.trim().replaceAll("[ \\t]+", " ");
     }
 
@@ -113,10 +114,11 @@ public class KanjiCharactersService {
             errors.put("kanji", "Kanji phải là duy nhất 1 ký tự chữ Hán (VD: 休)");
         }
 
+        // Hán Việt: Cho phép dấu phẩy
         if (isEmpty(dto.getTranslation())) {
             errors.put("translation", "Vui lòng điền âm Hán Việt");
-        } else if (!dto.getTranslation().matches("^[A-ZÀ-Ỹ\\s]+$")) {
-            errors.put("translation", "Hán Việt phải viết HOA TOÀN BỘ (VD: 'HƯU')");
+        } else if (!dto.getTranslation().matches("^[A-ZÀ-Ỹ\\s,]+$")) {
+            errors.put("translation", "Hán Việt phải viết HOA. Dùng dấu phẩy ngăn cách (VD: 'ÚC, UẤT').");
         }
 
         if (dto.getJlpt() == null) errors.put("jlpt", "Vui lòng chọn cấp độ JLPT");
@@ -132,16 +134,14 @@ public class KanjiCharactersService {
         if (isEmpty(dto.getRadical())) errors.put("radical", "Vui lòng điền bộ thủ");
         if (isEmpty(dto.getKanjiDescription())) errors.put("kanji_description", "Vui lòng điền câu chuyện ghi nhớ");
 
-        // --- 2. VALIDATE TỪ VỰNG---
+        // 2. VALIDATE TỪ VỰNG
         if (isEmpty(dto.getVocabulary())) {
             errors.put("vocabulary", "Vui lòng nhập ít nhất 1 từ vựng");
         } else {
             String[] lines = dto.getVocabulary().split("\\r?\\n");
             for (String line : lines) {
                 if (line.trim().isEmpty()) continue;
-
                 String vocabRegex = "^[^-\\r\\n]*[\\u3000-\\u30FF\\u4E00-\\u9FAF]+[^-\\r\\n]*-[^-\\r\\n]+-[^-\\r\\n]+$";
-
                 if (!line.matches(vocabRegex)) {
                     errors.put("vocabulary", "Dòng '" + line + "' sai cấu trúc. Yêu cầu: [TIẾNG NHẬT]-[PHIÊN ÂM]-[NGHĨA] (Đúng 2 dấu gạch ngang).");
                     break;
@@ -149,16 +149,14 @@ public class KanjiCharactersService {
             }
         }
 
-        // --- 3. VALIDATE CÂU VÍ DỤ  ---
+        // 3. VALIDATE CÂU VÍ DỤ
         if (isEmpty(dto.getExamples())) {
             errors.put("examples", "Vui lòng nhập ít nhất 1 câu ví dụ");
         } else {
             String[] lines = dto.getExamples().split("\\r?\\n");
             for (String line : lines) {
                 if (line.trim().isEmpty()) continue;
-
                 String exampleRegex = "^[^-\\r\\n]*[\\u3000-\\u30FF\\u4E00-\\u9FAF]+[^-\\r\\n]*-[^-\\r\\n]+$";
-
                 if (!line.matches(exampleRegex)) {
                     errors.put("examples", "Dòng '" + line + "' sai cấu trúc. Yêu cầu: [CÂU CÓ CHỮ NHẬT]-[DỊCH VIỆT] (Đúng 1 dấu gạch ngang).");
                     break;
@@ -188,14 +186,26 @@ public class KanjiCharactersService {
             errors.put("radical", "Định dạng đúng: [Chữ Hán] [Tên In Hoa Toàn Bộ] (VD: 鬯 SƯỞNG).");
         }
 
-        // 6. VALIDATE BỘ THÀNH PHẦN
+        // --- 6. VALIDATE BỘ THÀNH PHẦN (NGHIÊM NGẶT - CẤM KÝ TỰ ĐẶC BIỆT) ---
         if (!isEmpty(dto.getComponents())) {
             String[] lines = dto.getComponents().split("\\r?\\n");
             for (String line : lines) {
                 if (line.trim().isEmpty()) continue;
 
-                if (!line.matches("^[^,\\p{S}\\d]\\s+\\p{Lu}[^,]*$")) {
-                    errors.put("components", "Dòng '" + line + "' sai. Yêu cầu: [Ký tự] [Viết hoa chữ đầu]. Không dùng dấu phẩy (hệ thống tự thêm).");
+                // Cấm dấu phẩy (dành cho hệ thống tự hiển thị)
+                if (line.contains(",")) {
+                    errors.put("components", "Dòng '" + line + "' chứa dấu phẩy. Vui lòng chỉ xuống dòng, hệ thống sẽ tự hiển thị dấu phẩy.");
+                    break;
+                }
+
+                // Regex Whitelist Siêu Cấp:
+                // ^ : Bắt đầu
+                // [^\\p{P}\\p{S}\\d] : Ký tự đầu tiên KHÔNG được là: Dấu câu (chấm, phẩy...), Ký hiệu (><...), Số.
+                // \\s+ : Dấu cách bắt buộc.
+                // \\p{Lu} : Chữ cái đầu tiên của tên phải VIẾT HOA.
+                // [^\\p{P}\\p{S}]* : Phần còn lại cấm tuyệt đối Dấu câu và Ký hiệu (nghĩa là cấm . , ? ! > <).
+                if (!line.matches("^[^\\p{P}\\p{S}\\d]\\s+\\p{Lu}[^\\p{P}\\p{S}]*$")) {
+                    errors.put("components", "Dòng '" + line + "' chứa ký tự đặc biệt hoặc sai định dạng. Chỉ nhập: [Ký tự] [Tên viết hoa] (VD: '木 Mộc')");
                     break;
                 }
             }
