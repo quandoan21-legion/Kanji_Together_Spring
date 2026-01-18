@@ -58,6 +58,31 @@ public class KanjiCharactersService {
         return mapToDTO(repository.save(entity));
     }
 
+    public KanjiCharacterDTO createForUser(KanjiCharacterDTO dto) {
+        normalizeData(dto);
+        validateKanjiOnly(dto);
+
+        Optional<KanjiCharacters> existingOpt = repository.findByKanji(dto.getKanji());
+        KanjiCharacters entity;
+
+        if (existingOpt.isPresent()) {
+            KanjiCharacters existing = existingOpt.get();
+            if (Boolean.TRUE.equals(existing.getIsActive())) {
+                Map<String, String> errors = new HashMap<>();
+                errors.put("kanji", "Chữ Kanji '" + dto.getKanji() + "' đã tồn tại trong hệ thống!");
+                throw new CustomValidationException(errors);
+            }
+            entity = existing;
+        } else {
+            entity = new KanjiCharacters();
+            entity.setKanji(dto.getKanji());
+        }
+
+        updateEntityDataIfPresent(entity, dto);
+        entity.setIsActive(true);
+        return mapToDTO(repository.save(entity));
+    }
+
     public KanjiCharacterDTO update(Long id, KanjiCharacterDTO dto) {
         normalizeData(dto);
         validateKanjiData(dto);
@@ -206,6 +231,20 @@ public class KanjiCharactersService {
         }
     }
 
+    private void validateKanjiOnly(KanjiCharacterDTO dto) {
+        Map<String, String> errors = new HashMap<>();
+
+        if (isEmpty(dto.getKanji())) {
+            errors.put("kanji", "Vui lòng điền chữ Kanji");
+        } else if (!dto.getKanji().matches("^[\\u4E00-\\u9FAF]$")) {
+            errors.put("kanji", "Kanji phải là duy nhất 1 ký tự chữ Hán (VD: 休)");
+        }
+
+        if (!errors.isEmpty()) {
+            throw new CustomValidationException(errors);
+        }
+    }
+
     private boolean isEmpty(String str) {
         return str == null || str.trim().isEmpty();
     }
@@ -223,6 +262,21 @@ public class KanjiCharactersService {
         entity.setWritingImageUrl(dto.getWritingImageUrl());
         entity.setVocabulary(dto.getVocabulary());
         entity.setExamples(dto.getExamples());
+    }
+
+    private void updateEntityDataIfPresent(KanjiCharacters entity, KanjiCharacterDTO dto) {
+        if (dto.getOnPronunciation() != null) entity.setOnPronunciation(dto.getOnPronunciation());
+        if (dto.getKunPronunciation() != null) entity.setKunPronunciation(dto.getKunPronunciation());
+        if (dto.getNumStrokes() != null) entity.setNumStrokes(dto.getNumStrokes());
+        if (dto.getJlpt() != null) entity.setJlpt(dto.getJlpt());
+        if (dto.getKanjiDescription() != null) entity.setKanjiDescription(dto.getKanjiDescription());
+        if (dto.getTranslation() != null) entity.setTranslation(dto.getTranslation());
+        if (dto.getMeaning() != null) entity.setMeaning(dto.getMeaning());
+        if (dto.getRadical() != null) entity.setRadical(dto.getRadical());
+        if (dto.getComponents() != null) entity.setComponents(dto.getComponents());
+        if (dto.getWritingImageUrl() != null) entity.setWritingImageUrl(dto.getWritingImageUrl());
+        if (dto.getVocabulary() != null) entity.setVocabulary(dto.getVocabulary());
+        if (dto.getExamples() != null) entity.setExamples(dto.getExamples());
     }
 
     private KanjiCharacterDTO mapToDTO(KanjiCharacters entity) {
