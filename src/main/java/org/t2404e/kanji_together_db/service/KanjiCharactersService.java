@@ -193,7 +193,9 @@ public class KanjiCharactersService {
         }
 
         // --- BỘ THỦ (Cho phép dấu phẩy) ---
-        if (!isEmpty(dto.getRadical()) && !dto.getRadical().trim().matches("^[\\u4E00-\\u9FAF]\\s+[A-ZÀ-Ỹ\\s,]+$")) {
+        if (isEmpty(dto.getRadical())) {
+            errors.put("radical", "Vui lòng điền bộ thủ");
+        } else if (!dto.getRadical().trim().matches("^[\\u4E00-\\u9FAF]\\s+[A-ZÀ-Ỹ\\s,]+$")) {
             errors.put("radical", "Định dạng sai. VD: '鬯 SƯỞNG, SƯỚNG' (Chữ Hán + Tên In Hoa + Dấu Phẩy)");
         }
 
