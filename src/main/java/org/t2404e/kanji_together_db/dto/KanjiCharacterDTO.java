@@ -51,4 +51,7 @@ public class KanjiCharacterDTO {
 
     @JsonProperty("edit_by")
     private Integer editBy;
+
+    private String vocabulary;
+    private String examples;
 }

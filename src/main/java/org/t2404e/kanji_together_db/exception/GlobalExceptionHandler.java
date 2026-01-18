@@ -1,26 +1,35 @@
-package org.t2404e.kanji_together_db.exception; // <-- Package mới tạo
+package org.t2404e.kanji_together_db.exception;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
-import org.t2404e.kanji_together_db.dto.ApiResponse; // Import DTO của bạn
+import org.t2404e.kanji_together_db.dto.ApiResponse;
+
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // 1. Bắt các lỗi ResponseStatusException thông thường (404, 500...)
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiResponse<Object>> handleResponseStatusException(ResponseStatusException ex) {
-        // Lấy status code (ví dụ 400, 404)
         int statusCode = ex.getStatusCode().value();
-
-        // Lấy message lỗi bạn đã viết trong Service
         String message = ex.getReason();
 
-        // Đóng gói vào ApiResponse của bạn
         ApiResponse<Object> response = new ApiResponse<>(statusCode, message, null);
-
-        // Trả về ResponseEntity
         return new ResponseEntity<>(response, ex.getStatusCode());
+    }
+
+    // 2. Bắt lỗi CustomValidationException để gửi lỗi từng ô về cho Ruby
+    @ExceptionHandler(CustomValidationException.class)
+    public ResponseEntity<Map<String, Object>> handleCustomValidation(CustomValidationException ex) {
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("status", 400);
+        body.put("message", "Dữ liệu nhập vào không hợp lệ!");
+        body.put("errors", ex.getErrors()); // Chứa danh sách: { "on_pronunciation": "Phải là Katakana", ... }
+
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 }

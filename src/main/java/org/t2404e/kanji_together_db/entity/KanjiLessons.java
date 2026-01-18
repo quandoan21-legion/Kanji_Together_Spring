@@ -16,7 +16,7 @@ public class KanjiLessons {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // Nên để private
 
-    // Map với cột tên bài học trong DB (ví dụ: name) lamoo
+    // Map với cột tên bài học trong DB
     @Column(name = "name")
     private String name;
 
@@ -26,8 +26,6 @@ public class KanjiLessons {
     @Column(name = "lesson_description")
     private String lessonDescription;
 
-    // --- SỬA LỖI TẠI ĐÂY ---
-    // Xóa mappedBy, thêm JoinTable để kết nối bảng trung gian
     @ManyToMany
     @JoinTable(
             name = "kanji_characters_rel_lesson",

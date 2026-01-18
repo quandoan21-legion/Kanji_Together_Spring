@@ -51,8 +51,12 @@ public class KanjiCharacters {
     @Column(name = "radical")
     private String radical;
 
-    // --- QUAN HỆ VỚI LESSONS ---
-    // mappedBy phải trùng tên với biến "kanjiCharacters" bên file KanjiLessons
+    @Column(name = "vocabulary", columnDefinition = "TEXT")
+    private String vocabulary;
+
+    @Column(name = "examples", columnDefinition = "TEXT")
+    private String examples;
+
     @ManyToMany(mappedBy = "kanjiCharacters")
     private List<KanjiLessons> lessons;
 
@@ -60,7 +64,6 @@ public class KanjiCharacters {
     @OneToMany(mappedBy = "kanjiCharacter", cascade = CascadeType.ALL)
     private List<KanjiStories> stories;
 
-    // 2. QUAN HỆ VỚI QUESTIONS (THÊM MỚI ĐOẠN NÀY)
     @ManyToMany(mappedBy = "kanjiCharacters")
     private List<Questions> questions;
     // --- Audit Fields ---1
