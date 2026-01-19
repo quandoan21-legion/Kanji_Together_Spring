@@ -11,13 +11,15 @@ import org.t2404e.kanji_together_db.entity.KanjiStories;
 @Repository
 public interface KanjiStoriesRepository extends JpaRepository<KanjiStories, Long> {
 
-    @Query("SELECT s FROM KanjiStories s WHERE " +
-            "(:status IS NULL OR s.status = :status) AND " +
-            "(:email IS NULL OR s.user.email LIKE %:email%) AND " +
-            "(:kanjiId IS NULL OR s.kanjiCharacter.id = :kanjiId)")
+    @Query("SELECT s FROM KanjiStories s " +
+            "LEFT JOIN s.kanjiCharacter k " +
+            "WHERE " +
+            "(:status IS NULL OR s.status = :status) " +
+            "AND (:kanjiText IS NULL OR k.kanji LIKE %:kanjiText%) " +
+            "AND (:kanjiId IS NULL OR k.id = :kanjiId)")
     Page<KanjiStories> findAllFiltered(
             @Param("status") String status,
-            @Param("email") String email,
+            @Param("kanjiText") String kanjiText,
             @Param("kanjiId") Long kanjiId,
             Pageable pageable);
 }

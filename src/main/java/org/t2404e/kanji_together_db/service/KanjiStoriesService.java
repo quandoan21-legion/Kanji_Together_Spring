@@ -29,22 +29,34 @@ public class KanjiStoriesService {
         this.kanjiRepo = kanjiRepo;
     }
 
-    // 1. Lấy danh sách có lọc (Dùng cho trang Index Ruby)
-    public List<KanjiStoryDTO> getAllFiltered(String status, String email, Long kanjiId, int page) {
+    // =====================================================================
+    // 1. LẤY DANH SÁCH CÓ LỌC (Đã sửa: Thay Email bằng kanjiText)
+    // =====================================================================
+    public List<KanjiStoryDTO> getAllFiltered(String status, String kanjiText, Long kanjiId, int page) {
         Pageable pageable = PageRequest.of(page, 20, Sort.by("id").descending());
-        // Thêm tham số kanjiId vào hàm gọi repository
-        Page<KanjiStories> storiesPage = storyRepo.findAllFiltered(status, email, kanjiId, pageable);
+
+        // Xử lý chuỗi rỗng -> null để Repository bỏ qua điều kiện lọc đó
+        String filterStatus = (status != null && !status.isEmpty()) ? status : null;
+        String filterKanji = (kanjiText != null && !kanjiText.isEmpty()) ? kanjiText : null;
+
+        // Gọi hàm findAllFiltered mới trong Repository
+        Page<KanjiStories> storiesPage = storyRepo.findAllFiltered(filterStatus, filterKanji, kanjiId, pageable);
+
         return storiesPage.getContent().stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
-    // 2. Lấy chi tiết bài viết (Dùng cho nút "Vào duyệt" - Sửa lỗi 405)
+    // =====================================================================
+    // 2. CÁC CHỨC NĂNG KHÁC (GIỮ NGUYÊN 100%)
+    // =====================================================================
+
+    // Lấy chi tiết bài viết
     public KanjiStoryDTO getById(Long id) {
         KanjiStories entity = storyRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bài viết với ID: " + id));
         return mapToDTO(entity);
     }
 
-    // 3. DUYỆT BÀI: Cập nhật nghĩa vào bảng KanjiCharacters
+    // DUYỆT BÀI: Cập nhật nghĩa vào bảng KanjiCharacters
     @Transactional
     public KanjiStoryDTO approve(Long id, Map<String, Object> data) {
         KanjiStories story = storyRepo.findById(id)
@@ -71,17 +83,18 @@ public class KanjiStoriesService {
         return mapToDTO(storyRepo.save(story));
     }
 
-    // 4. TỪ CHỐI
+    // TỪ CHỐI
     public void reject(Long id, String reason) {
         KanjiStories story = storyRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Story"));
 
         story.setStatus("rejected");
+        // Có thể lưu reason vào DB nếu entity có trường đó, hiện tại chỉ in log
         System.out.println("ID " + id + " bị từ chối vì: " + reason);
         storyRepo.save(story);
     }
 
-    // 5. CREATE (Cho API Mobile/Web User)
+    // CREATE (Cho API Mobile/Web User)
     public KanjiStoryDTO create(KanjiStoryDTO dto) {
         KanjiCharacters kanji = kanjiRepo.findById(dto.getKanjiId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Kanji"));
@@ -94,6 +107,8 @@ public class KanjiStoriesService {
 
         return mapToDTO(storyRepo.save(story));
     }
+
+    // UPDATE
     public KanjiStoryDTO update(Long id, KanjiStoryDTO dto) {
         KanjiStories story = storyRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Story"));
@@ -103,14 +118,15 @@ public class KanjiStoriesService {
 
         return mapToDTO(storyRepo.save(story));
     }
-    // 6. DELETE
+
+    // DELETE
     public void delete(Long id) {
         KanjiStories story = storyRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Story"));
         storyRepo.delete(story);
     }
 
-    // Mapper Helper Duy nhất: Chuyển đổi Entity sang DTO
+    // Mapper Helper
     private KanjiStoryDTO mapToDTO(KanjiStories entity) {
         KanjiStoryDTO dto = new KanjiStoryDTO();
         dto.setId(entity.getId());

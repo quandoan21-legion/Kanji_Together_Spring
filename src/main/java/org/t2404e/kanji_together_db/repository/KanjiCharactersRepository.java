@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface KanjiCharactersRepository extends JpaRepository<KanjiCharacters, Long> {
     Optional<KanjiCharacters> findByKanji(String kanji);
     List<KanjiCharacters> findAllByIsActiveTrue();
+    List<KanjiCharacters> findAllByIsActiveFalse();
 }
