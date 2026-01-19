@@ -94,7 +94,6 @@ public class KanjiStoriesService {
         storyRepo.save(story);
     }
 
-    // CREATE (Cho API Mobile/Web User)
     public KanjiStoryDTO create(KanjiStoryDTO dto) {
         KanjiCharacters kanji = kanjiRepo.findById(dto.getKanjiId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Kanji"));
