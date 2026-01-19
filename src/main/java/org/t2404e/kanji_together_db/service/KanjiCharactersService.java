@@ -21,10 +21,27 @@ public class KanjiCharactersService {
     @Autowired
     private KanjiCharactersRepository repository;
 
+    // Lấy danh sách Kanji đã kích hoạt (Hiển thị cho người học)
     public List<KanjiCharacterDTO> getAll() {
         return repository.findAllByIsActiveTrue().stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    // --- MỚI: Lấy danh sách chờ duyệt (Active = False) ---
+    public List<KanjiCharacterDTO> getPending() {
+        return repository.findAllByIsActiveFalse().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // --- MỚI: Duyệt Kanji (Chuyển Active thành True) ---
+    public KanjiCharacterDTO approve(Long id) {
+        KanjiCharacters entity = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Kanji ID: " + id));
+
+        entity.setIsActive(true);
+        return mapToDTO(repository.save(entity));
     }
 
     public KanjiCharacterDTO getDetail(Long id) {
@@ -33,6 +50,7 @@ public class KanjiCharactersService {
         return mapToDTO(entity);
     }
 
+    // Tạo bởi Admin (Active luôn = true)
     public KanjiCharacterDTO create(KanjiCharacterDTO dto) {
         normalizeData(dto);
         validateKanjiData(dto);
@@ -58,6 +76,7 @@ public class KanjiCharactersService {
         return mapToDTO(repository.save(entity));
     }
 
+    // Tạo bởi User (Active = false -> Chờ duyệt)
     public KanjiCharacterDTO createForUser(KanjiCharacterDTO dto) {
         normalizeData(dto);
         validateKanjiOnly(dto);
@@ -79,13 +98,16 @@ public class KanjiCharactersService {
         }
 
         updateEntityDataIfPresent(entity, dto);
-        entity.setIsActive(true);
+
+        // QUAN TRỌNG: User tạo xong phải nằm ở hàng chờ (False)
+        entity.setIsActive(false);
+
         return mapToDTO(repository.save(entity));
     }
 
     public KanjiCharacterDTO update(Long id, KanjiCharacterDTO dto) {
         normalizeData(dto);
-        validateKanjiData(dto);
+        validateKanjiData(dto); // Khi Admin duyệt/sửa, chạy Full Validate chặt chẽ
 
         KanjiCharacters entity = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Kanji để sửa"));
@@ -100,7 +122,10 @@ public class KanjiCharactersService {
         }
 
         updateEntityData(entity, dto);
+
+        // Nếu DTO truyền lên có isActive (trường hợp nút Duyệt), thì cập nhật theo
         if (dto.getIsActive() != null) entity.setIsActive(dto.getIsActive());
+
         return mapToDTO(repository.save(entity));
     }
 
