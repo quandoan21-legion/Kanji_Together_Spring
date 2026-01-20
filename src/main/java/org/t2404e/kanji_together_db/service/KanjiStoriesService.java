@@ -212,8 +212,7 @@ public class KanjiStoriesService {
 
         if (targetStatus.equals("pending") || targetStatus.equals("rejected")) {
             story.setStatus(targetStatus);
-            // Nếu database có cột lý do, hãy lưu tại đây
-            // story.setRejectReason(reason);
+
         } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái sai");
         }
