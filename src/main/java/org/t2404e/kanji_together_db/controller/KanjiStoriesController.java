@@ -27,7 +27,7 @@ public class KanjiStoriesController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<KanjiStoryDTO>>> getAll(
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String kanji, // <-- THAY ĐỔI Ở ĐÂY (email -> kanji)
+            @RequestParam(required = false) String kanji,
             @RequestParam(required = false) Long kanjiId,
             @RequestParam(defaultValue = "0") int page
     ) {

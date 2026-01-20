@@ -36,14 +36,12 @@ public class KanjiCharactersController {
     }
 
     // 4. TẠO MỚI (Bởi Admin)
-    // QUAN TRỌNG: Đã xóa @Valid để Service tự xử lý validate (trả về lỗi chi tiết cho Rails)
     @PostMapping
     public ResponseEntity<ApiResponse<KanjiCharacterDTO>> create(@RequestBody KanjiCharacterDTO dto) {
         return new ResponseEntity<>(new ApiResponse<>(201, "Tạo Kanji thành công", service.create(dto)), HttpStatus.CREATED);
     }
 
     // 5. NGƯỜI DÙNG ĐÓNG GÓP
-    // QUAN TRỌNG: Đã xóa @Valid
     @PostMapping("/submit")
     public ResponseEntity<ApiResponse<KanjiCharacterDTO>> submit(@RequestBody KanjiCharacterDTO dto) {
         return new ResponseEntity<>(new ApiResponse<>(201, "Đã gửi đóng góp, vui lòng chờ duyệt", service.createForUser(dto)), HttpStatus.CREATED);
