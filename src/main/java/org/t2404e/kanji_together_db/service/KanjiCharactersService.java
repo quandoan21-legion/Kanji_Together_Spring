@@ -106,7 +106,7 @@ public class KanjiCharactersService {
 
     public KanjiCharacterDTO update(Long id, KanjiCharacterDTO dto) {
         normalizeData(dto);
-        validateKanjiData(dto); // Khi Admin duyệt/sửa, chạy Full Validate chặt chẽ
+        validateKanjiData(dto);
 
         KanjiCharacters entity = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Kanji để sửa"));

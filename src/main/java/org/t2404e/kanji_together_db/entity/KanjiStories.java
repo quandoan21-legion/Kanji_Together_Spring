@@ -14,15 +14,47 @@ public class KanjiStories {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "kanji_story", columnDefinition = "TEXT") // Đổi sang TEXT để viết truyện dài
+    @Column(name = "kanji_story", columnDefinition = "TEXT")
     private String kanjiStory;
 
-    // THÊM TRƯỜNG NÀY: Để lọc Chờ duyệt/Đã duyệt
     @Column(name = "status")
     private String status = "pending";
 
+    // --- CÁC CỘT LƯU THÔNG TIN THÔ TỪ USER ---
+    @Column(name = "kanji_text")
+    private String kanjiText;
+
+    @Column(name = "user_translation")
+    private String userTranslation;
+
+    @Column(name = "user_meaning")
+    private String userMeaning;
+
+    @Column(name = "user_num_strokes")
+    private Integer userNumStrokes;
+
+    // BỔ SUNG: Hai trường âm đọc người dùng đóng góp
+    @Column(name = "user_onyomi")
+    private String userOnyomi;
+
+    @Column(name = "user_kunyomi")
+    private String userKunyomi;
+
+    @Column(name = "user_radical")
+    private String userRadical;
+
+    @Column(name = "user_components")
+    private String userComponents;
+
+    @Column(name = "user_vocabulary", columnDefinition = "TEXT")
+    private String userVocabulary;
+
+    @Column(name = "user_examples", columnDefinition = "TEXT")
+    private String userExamples;
+    // ----------------------------------------------
+
     @ManyToOne
-    @JoinColumn(name = "user_id") // Đảm bảo tên cột trong MySQL là user_id
+    @JoinColumn(name = "user_id")
     private Users user;
 
     @CreationTimestamp
@@ -32,14 +64,11 @@ public class KanjiStories {
     @UpdateTimestamp
     @Column(name = "edit_at")
     private LocalDateTime editAt;
-    @Column(name = "create_by")
-    private Integer createBy;
-    @Column(name = "is_active")
-    private Boolean isActive;
-    @Column(name = "edit_by")
-    private Integer editBy;
-    @ManyToOne
-    @JoinColumn(name = "kanji_id", nullable = false)
-    private KanjiCharacters kanjiCharacter;
 
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
+    @ManyToOne
+    @JoinColumn(name = "kanji_id", nullable = true)
+    private KanjiCharacters kanjiCharacter;
 }

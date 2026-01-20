@@ -55,15 +55,18 @@ public class KanjiStoriesController {
         return ResponseEntity.ok(new ApiResponse<>(200, "Duyệt thành công", service.approve(id, adminData)));
     }
 
-    // REJECT (Từ chối bài viết)
-    @PutMapping("/{id}/reject")
-    public ResponseEntity<ApiResponse<Void>> reject(
-            @PathVariable Long id,
-            @RequestParam String reason) {
-        service.reject(id, reason);
-        return ResponseEntity.ok(new ApiResponse<>(200, "Đã từ chối bài viết", null));
-    }
 
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<?> rejectStory(
+            @PathVariable Long id,
+            @RequestParam(required = false) String reason,
+            @RequestParam(required = false) String status
+    ) {
+        // Truyền cả reason vào service
+        service.reject(id, status, reason);
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "Thành công", null));
+    }
     // ==================================================================================
     // 3. CRUD CƠ BẢN (CREATE, UPDATE, DELETE) - GIỮ NGUYÊN
     // ==================================================================================
