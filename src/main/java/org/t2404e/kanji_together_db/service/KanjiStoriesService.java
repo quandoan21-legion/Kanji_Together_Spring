@@ -7,6 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 import org.t2404e.kanji_together_db.dto.KanjiStoryDTO;
 import org.t2404e.kanji_together_db.entity.KanjiCharacters;
@@ -29,11 +30,24 @@ public class KanjiStoriesService {
         this.kanjiRepo = kanjiRepo;
     }
 
+    public List<KanjiStoryDTO> getAll(int page, int size) {
+        int pageIndex = Math.max(page, 0);
+        int pageSize = size > 0 ? size : 20;
+        Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by("id").descending());
+        return storyRepo.findAll(pageable).getContent().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
     // 1. Lấy danh sách có lọc (Dùng cho trang Index Ruby)
-    public List<KanjiStoryDTO> getAllFiltered(String status, String email, Long kanjiId, int page) {
-        Pageable pageable = PageRequest.of(page, 20, Sort.by("id").descending());
+    public List<KanjiStoryDTO> getAllFiltered(String status, String email, Long kanjiId, int page, int size) {
+        String normalizedStatus = StringUtils.hasText(status) ? status : null;
+        String normalizedEmail = StringUtils.hasText(email) ? email : null;
+        int pageIndex = Math.max(page, 0);
+        int pageSize = size > 0 ? size : 20;
+        Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by("id").descending());
         // Thêm tham số kanjiId vào hàm gọi repository
-        Page<KanjiStories> storiesPage = storyRepo.findAllFiltered(status, email, kanjiId, pageable);
+        Page<KanjiStories> storiesPage = storyRepo.findAllFiltered(normalizedStatus, normalizedEmail, kanjiId, pageable);
         return storiesPage.getContent().stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 

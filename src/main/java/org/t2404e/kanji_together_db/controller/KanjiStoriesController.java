@@ -19,17 +19,14 @@
         private KanjiStoriesService service;
 
         // 1. GET ALL WITH FILTER (Ruby dùng để hiển thị danh sách)
-        @GetMapping
-        public ResponseEntity<ApiResponse<List<KanjiStoryDTO>>> getAll(
-                @RequestParam(required = false) String status,
-                @RequestParam(required = false) String email,
-                @RequestParam(required = false) Long kanjiId, // THÊM DÒNG NÀY
-                @RequestParam(defaultValue = "0") int page
-        ) {
-            // Truyền đủ 4 tham số vào service
-            List<KanjiStoryDTO> list = service.getAllFiltered(status, email, kanjiId, page);
-            return ResponseEntity.ok(new ApiResponse<>(200, "Lấy danh sách thành công", list));
-        }
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<KanjiStoryDTO>>> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        List<KanjiStoryDTO> list = service.getAll(page, size);
+        return ResponseEntity.ok(new ApiResponse<>(200, "Lấy danh sách thành công", list));
+    }
 
         @GetMapping("/{id}")
         public ResponseEntity<ApiResponse<KanjiStoryDTO>> getById(@PathVariable Long id) {
