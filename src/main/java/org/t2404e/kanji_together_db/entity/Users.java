@@ -18,6 +18,18 @@ public class Users {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "username", unique = true, nullable = false)
+    private String username;
+
+    @Column(name = "display_name", nullable = false)
+    private String displayName;
+
+    @Column(name = "avatar_url", nullable = false)
+    private String avatarUrl;
+
+    @Column(name = "phone_number", nullable = false)
+    private String phoneNumber;
+
     @Column(unique = true, nullable = false)
     private String email;
 
@@ -30,6 +42,33 @@ public class Users {
 
     @Column(name = "is_verified")
     private Boolean isVerified;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
+
+    @Column(name = "password_hash")
+    private String passwordHash;
+
+    @Column(name = "auth_provider")
+    private String authProvider;
+
+    @Column(name = "start_date")
+    private LocalDateTime startDate;
+
+    @Column(name = "address_line1")
+    private String addressLine1;
+
+    @Column(name = "city")
+    private String city;
+
+    @Column(name = "state")
+    private String state;
+
+    @Column(name = "postal_code")
+    private String postalCode;
+
+    @Column(name = "country")
+    private String country;
 
     // --- TIMESTAMP FIELDS ---
     @UpdateTimestamp

@@ -15,6 +15,21 @@ public class UserDTO {
     @NotBlank(message = "Tên user không được để trống")
     private String name;
 
+    @NotBlank(message = "Username không được để trống")
+    private String username;
+
+    @NotBlank(message = "Display name không được để trống")
+    @JsonProperty("display_name")
+    private String displayName;
+
+    @NotBlank(message = "Avatar URL không được để trống")
+    @JsonProperty("avatar_url")
+    private String avatarUrl;
+
+    @NotBlank(message = "Số điện thoại không được để trống")
+    @JsonProperty("phone_number")
+    private String phoneNumber;
+
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không đúng định dạng")
     private String email;
@@ -27,6 +42,30 @@ public class UserDTO {
 
     @JsonProperty("is_verified")
     private Boolean isVerified;
+
+    @JsonProperty("last_login_at")
+    private LocalDateTime lastLoginAt;
+
+    @JsonProperty(value = "password_hash", access = JsonProperty.Access.WRITE_ONLY)
+    private String passwordHash;
+
+    @JsonProperty("auth_provider")
+    private String authProvider;
+
+    @JsonProperty("start_date")
+    private LocalDateTime startDate;
+
+    @JsonProperty("address_line1")
+    private String addressLine1;
+
+    private String city;
+
+    private String state;
+
+    @JsonProperty("postal_code")
+    private String postalCode;
+
+    private String country;
 
     // Để gán lớp ngay khi tạo user (Optional)
     @JsonProperty("clazz_id")
