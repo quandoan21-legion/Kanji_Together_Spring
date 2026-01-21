@@ -7,6 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 import org.t2404e.kanji_together_db.dto.KanjiStoryDTO;
 import org.t2404e.kanji_together_db.entity.KanjiCharacters;
