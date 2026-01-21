@@ -33,7 +33,6 @@ public class KanjiStories {
     @Column(name = "user_num_strokes")
     private Integer userNumStrokes;
 
-    // BỔ SUNG: Hai trường âm đọc người dùng đóng góp
     @Column(name = "user_onyomi")
     private String userOnyomi;
 
@@ -68,6 +67,8 @@ public class KanjiStories {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @Column(name = "reject_reason", columnDefinition = "TEXT")
+    private String rejectReason;
     @ManyToOne
     @JoinColumn(name = "kanji_id", nullable = true)
     private KanjiCharacters kanjiCharacter;

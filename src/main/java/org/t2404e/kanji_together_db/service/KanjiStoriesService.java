@@ -48,7 +48,7 @@ public class KanjiStoriesService {
     }
 
     // =====================================================================
-    // 2. DUYỆT BÀI (SIẾT CHẶT VALIDATE GIỐNG FORM THÊM/SỬA)
+    // 2. DUYỆT BÀI
     // =====================================================================
     @Transactional
     public KanjiStoryDTO approve(Long id, Map<String, Object> data) {
@@ -91,22 +91,32 @@ public class KanjiStoriesService {
 
         story.setKanjiCharacter(kanji);
         story.setStatus("approved");
+        story.setRejectReason(null);
         return mapToDTO(storyRepo.save(story));
     }
 
     private void validateApproveData(Map<String, Object> data) {
         Map<String, String> errors = new java.util.HashMap<>();
 
-        // 1. Kiểm tra trống các trường bắt buộc
-        String[] requiredFields = {
-                "kanji", "translation", "meaning", "onyomi", "kunyomi",
-                "stroke_count", "jlpt_level", "radical", "writing_image_url",
-                "kanji_description", "vocabulary", "examples"
-        };
+        Map<String, String> requiredFields = new java.util.HashMap<>();
+        requiredFields.put("kanji", "Mặt chữ");
+        requiredFields.put("translation", "Hán Việt");
+        requiredFields.put("meaning", "Nghĩa");
+        requiredFields.put("onyomi", "Âm On");
+        requiredFields.put("kunyomi", "Âm Kun");
+        requiredFields.put("stroke_count", "Số nét");
+        requiredFields.put("jlpt_level", "JLPT");
+        requiredFields.put("radical", "Bộ thủ");
+        requiredFields.put("writing_image_url", "URL Ảnh");
+        requiredFields.put("kanji_description", "Câu chuyện");
+        requiredFields.put("vocabulary", "Từ vựng");
+        requiredFields.put("examples", "Ví dụ");
 
-        for (String field : requiredFields) {
-            if (data.get(field) == null || data.get(field).toString().trim().isEmpty()) {
-                errors.put(field, "Trường này không được để trống");
+        for (Map.Entry<String, String> entry : requiredFields.entrySet()) {
+            Object value = data.get(entry.getKey());
+            if (value == null || value.toString().trim().isEmpty()) {
+                // Thông báo rõ tên trường bị thiếu để Admin dễ xử lý
+                errors.put(entry.getKey(), "Trường [" + entry.getValue() + "] không được để trống");
             }
         }
 
@@ -202,20 +212,27 @@ public class KanjiStoriesService {
     // =====================================================================
     // 3. CÁC CHỨC NĂNG CRUD CƠ BẢN
     // =====================================================================
-    // KanjiStoriesService.java
     @Transactional
-    public void reject(Long id, String status, String reason) { // Thêm String reason
+    public void reject(Long id, String status, String reason) {
         KanjiStories story = storyRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy"));
 
         String targetStatus = (status != null) ? status.trim().toLowerCase() : "rejected";
 
+        // Bắt buộc phải có lý do nếu trạng thái là từ chối (rejected)
+        if (targetStatus.equals("rejected")) {
+            if (reason == null || reason.trim().isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Lý do từ chối bài viết không được để trống.");
+            }
+            story.setRejectReason(reason.trim()); // Lưu lý do vào entity
+        }
+
         if (targetStatus.equals("pending") || targetStatus.equals("rejected")) {
             story.setStatus(targetStatus);
-
         } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái sai");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái không hợp lệ: " + targetStatus);
         }
+
         storyRepo.save(story);
     }
 
@@ -262,6 +279,7 @@ public class KanjiStoriesService {
         dto.setStatus(entity.getStatus());
         dto.setIsActive(entity.getIsActive());
         dto.setCreateAt(entity.getCreateAt());
+        dto.setRejectReason(entity.getRejectReason());
         if (entity.getUser() != null) dto.setUserEmail(entity.getUser().getEmail());
 
         if (entity.getKanjiCharacter() != null) {

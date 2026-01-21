@@ -57,4 +57,6 @@ public class KanjiStoryDTO {
     private String userOnyomi;
     @JsonProperty("user_kunyomi")
     private String userKunyomi;
+    @JsonProperty("reject_reason")
+    private String rejectReason;
 }
