@@ -189,7 +189,17 @@ public class AuthService {
         user.setIsVerified(true);
         usersRepository.save(user);
     }
-
+    public void resetPassword(String email, String otpCode, String newPassword) {
+        Users user = usersRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy user"));
+        UserEmailOtp otp = userEmailOtpRepository.findTopByUserOrderByIdDesc(user)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "OTP không tồn tại"));
+        if (otp.getConsumedAt() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "OTP chưa được xác thực");
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        usersRepository.save(user);
+    }
     private String generateOtpCode() {
         int code = 100000 + secureRandom.nextInt(900000);
         return String.valueOf(code);

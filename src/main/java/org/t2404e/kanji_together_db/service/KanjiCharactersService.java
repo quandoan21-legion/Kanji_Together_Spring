@@ -21,10 +21,27 @@ public class KanjiCharactersService {
     @Autowired
     private KanjiCharactersRepository repository;
 
+    // Lấy danh sách Kanji đã kích hoạt (Hiển thị cho người học)
     public List<KanjiCharacterDTO> getAll() {
         return repository.findAllByIsActiveTrue().stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    // --- MỚI: Lấy danh sách chờ duyệt (Active = False) ---
+    public List<KanjiCharacterDTO> getPending() {
+        return repository.findAllByIsActiveFalse().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // --- MỚI: Duyệt Kanji (Chuyển Active thành True) ---
+    public KanjiCharacterDTO approve(Long id) {
+        KanjiCharacters entity = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Kanji ID: " + id));
+
+        entity.setIsActive(true);
+        return mapToDTO(repository.save(entity));
     }
 
     public KanjiCharacterDTO getDetail(Long id) {
@@ -33,6 +50,7 @@ public class KanjiCharactersService {
         return mapToDTO(entity);
     }
 
+    // Tạo bởi Admin (Active luôn = true)
     public KanjiCharacterDTO create(KanjiCharacterDTO dto) {
         normalizeData(dto);
         validateKanjiData(dto);
@@ -58,6 +76,7 @@ public class KanjiCharactersService {
         return mapToDTO(repository.save(entity));
     }
 
+    // Tạo bởi User (Active = false -> Chờ duyệt)
     public KanjiCharacterDTO createForUser(KanjiCharacterDTO dto) {
         normalizeData(dto);
         validateKanjiOnly(dto);
@@ -79,7 +98,9 @@ public class KanjiCharactersService {
         }
 
         updateEntityDataIfPresent(entity, dto);
-        entity.setIsActive(true);
+
+        entity.setIsActive(false);
+
         return mapToDTO(repository.save(entity));
     }
 
@@ -100,7 +121,9 @@ public class KanjiCharactersService {
         }
 
         updateEntityData(entity, dto);
+
         if (dto.getIsActive() != null) entity.setIsActive(dto.getIsActive());
+
         return mapToDTO(repository.save(entity));
     }
 
@@ -192,7 +215,7 @@ public class KanjiCharactersService {
             errors.put("meaning", "Nghĩa quá dài (tối đa 255 ký tự)");
         }
 
-        // --- BỘ THỦ (Cho phép dấu phẩy) ---
+        // --- BỘ THỦ ---
         if (isEmpty(dto.getRadical())) {
             errors.put("radical", "Vui lòng điền bộ thủ");
         } else if (!dto.getRadical().trim().matches("^[\\u4E00-\\u9FAF]\\s+[A-ZÀ-Ỹ\\s,]+$")) {
