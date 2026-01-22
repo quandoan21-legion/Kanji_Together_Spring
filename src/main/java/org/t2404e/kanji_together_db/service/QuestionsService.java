@@ -4,10 +4,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.t2404e.kanji_together_db.entity.KanjiCharacters; // Import Entity Kanji
 import org.t2404e.kanji_together_db.entity.Questions;
 import org.t2404e.kanji_together_db.exception.CustomValidationException;
+import org.t2404e.kanji_together_db.repository.KanjiCharactersRepository; // Import Repo Kanji
 import org.t2404e.kanji_together_db.repository.QuestionsRepository;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +21,9 @@ public class QuestionsService {
     @Autowired
     private QuestionsRepository repository;
 
+    @Autowired
+    private KanjiCharactersRepository kanjiRepository; // <--- MỚI: Cần cái này để check Kanji tồn tại
+
     // Lấy danh sách câu hỏi Active
     public List<Questions> getAllActive() {
         return repository.findAllByStatus(1);
@@ -26,6 +32,12 @@ public class QuestionsService {
     // Lọc theo loại (chỉ lấy Active)
     public List<Questions> filterByType(String type) {
         return repository.findByQuestionTypeAndStatus(type, 1);
+    }
+
+    // --- MỚI: TÌM KIẾM THEO CHỮ KANJI ---
+    // Hỗ trợ tính năng tìm kiếm mà bạn vừa thêm ở Controller Ruby
+    public List<Questions> searchByKanji(String kanjiChar) {
+        return repository.findByKanjiCharacter(kanjiChar);
     }
 
     // Lấy chi tiết
@@ -40,6 +52,9 @@ public class QuestionsService {
         normalizeData(question);
         validateQuestionData(question);
 
+        // --- MỚI: Xử lý danh sách Kanji liên quan ---
+        processRelatedKanjis(question);
+
         // Mặc định Active khi tạo mới
         question.setStatus(1);
 
@@ -53,13 +68,25 @@ public class QuestionsService {
         normalizeData(questionDetails);
         validateQuestionData(questionDetails);
 
-        // Update fields
+        // Update fields cơ bản
         existingQuestion.setQuestionType(questionDetails.getQuestionType());
         existingQuestion.setQuestionText(questionDetails.getQuestionText());
         existingQuestion.setCorrectAnswer(questionDetails.getCorrectAnswer());
         existingQuestion.setWrongAnswer1(questionDetails.getWrongAnswer1());
         existingQuestion.setWrongAnswer2(questionDetails.getWrongAnswer2());
         existingQuestion.setWrongAnswer3(questionDetails.getWrongAnswer3());
+
+        // --- MỚI: Update danh sách Kanji liên quan ---
+        // Copy danh sách Kanji từ request sang object cũ
+        if (questionDetails.getKanjiCharacters() != null) {
+            processRelatedKanjis(questionDetails); // Validate ID trước
+            existingQuestion.setKanjiCharacters(questionDetails.getKanjiCharacters());
+        } else {
+            // Nếu gửi null hoặc rỗng thì có thể muốn xóa hết liên kết, hoặc giữ nguyên tùy logic
+            // Ở đây tôi chọn cách: Nếu gửi list rỗng -> Xóa liên kết.
+            existingQuestion.setKanjiCharacters(new ArrayList<>());
+        }
+
         return repository.save(existingQuestion);
     }
 
@@ -73,7 +100,22 @@ public class QuestionsService {
         repository.save(question);
     }
 
-    // --- VALIDATION & NORMALIZATION (Giống KanjiCharacters) ---
+    // --- HELPER: Xử lý Kanji List ---
+    private void processRelatedKanjis(Questions q) {
+        if (q.getKanjiCharacters() != null && !q.getKanjiCharacters().isEmpty()) {
+            List<KanjiCharacters> validKanjis = new ArrayList<>();
+            for (KanjiCharacters k : q.getKanjiCharacters()) {
+                // Ruby chỉ gửi ID (ví dụ: {id: 1}), nên ta phải tìm trong DB xem có thật không
+                if (k.getId() != null) {
+                    kanjiRepository.findById(k.getId()).ifPresent(validKanjis::add);
+                }
+            }
+            // Gán lại danh sách những Kanji ĐÃ TÌM THẤY trong DB
+            q.setKanjiCharacters(validKanjis);
+        }
+    }
+
+    // --- VALIDATION & NORMALIZATION (Giữ nguyên chặt chẽ) ---
 
     private void normalizeData(Questions q) {
         if (q.getQuestionText() != null) q.setQuestionText(q.getQuestionText().trim());
@@ -105,7 +147,6 @@ public class QuestionsService {
         if (isEmpty(q.getWrongAnswer3())) {
             errors.put("wrong_answer_3", "Vui lòng nhập đáp án sai 3");
         }
-        // --------------------------------------
 
         if (!errors.isEmpty()) {
             throw new CustomValidationException(errors);

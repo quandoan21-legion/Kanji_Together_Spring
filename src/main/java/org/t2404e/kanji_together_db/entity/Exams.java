@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.t2404e.kanji_together_db.enums.EExamType;
+import org.t2404e.kanji_together_db.enums.ERank;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,13 +21,36 @@ public class Exams {
     @Column(nullable = false)
     private String name;
 
-    // Ví dụ các cột khác của bạn
-    // private String question;
-    // private String examType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "exam_type", nullable = false)
+    private EExamType examType;
 
-    // --- QUAN HỆ VỚI QUESTIONS ---
-    // mappedBy="exam" trỏ tới biến "private Exams exam;" ở file Questions
-    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "target_rank")
+    private ERank targetRank;
+
+    @Column(name = "duration")
+    private Integer duration;
+
+    @Column(name = "pass_score")
+    private Integer passScore;
+
+    @Column(name = "total_questions")
+    private Integer totalQuestions;
+
+    @Column(name = "lesson_id")
+    private Long lessonId;
+
+    @Column(nullable = false)
+    private Integer status = 1;
+
+
+    @ManyToMany
+    @JoinTable(
+            name = "exam_questions",
+            joinColumns = @JoinColumn(name = "exam_id"),
+            inverseJoinColumns = @JoinColumn(name = "question_id")
+    )
     private List<Questions> questions;
 
     // --- Audit Fields ---

@@ -15,13 +15,27 @@ public class QuestionsController {
     @Autowired
     private QuestionsService service;
 
+    // SỬA ĐOẠN NÀY: Thêm tham số "kanji" để nhận từ Ruby
     @GetMapping
-    public List<Questions> getAll(@RequestParam(required = false) String type) {
+    public List<Questions> getAll(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String kanji // <--- MỚI
+    ) {
+        // 1. Ưu tiên tìm theo Kanji trước (cho ô tìm kiếm)
+        if (kanji != null && !kanji.isEmpty()) {
+            return service.searchByKanji(kanji);
+        }
+
+        // 2. Nếu không tìm Kanji thì lọc theo Type (cho dropdown)
         if (type != null && !type.isEmpty()) {
             return service.filterByType(type);
         }
+
+        // 3. Mặc định lấy tất cả câu Active
         return service.getAllActive();
     }
+
+    // --- CÁC HÀM DƯỚI GIỮ NGUYÊN KHÔNG ĐỔI ---
 
     @GetMapping("/{id}")
     public ResponseEntity<Questions> getById(@PathVariable Long id) {
