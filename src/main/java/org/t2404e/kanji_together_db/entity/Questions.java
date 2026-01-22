@@ -1,5 +1,6 @@
 package org.t2404e.kanji_together_db.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty; // <--- QUAN TRỌNG: Thư viện để map tên JSON
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -15,19 +16,48 @@ public class Questions {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 255)
-    private String name;
+    // Ruby gửi: question_type
+    @JsonProperty("question_type")
+    @Column(name = "question_type", nullable = false)
+    private String questionType;
 
-    @Column(name = "question")
+    // Ruby gửi: question_text
+    @JsonProperty("question_text")
+    @Column(name = "question_text", columnDefinition = "TEXT")
     private String questionText;
 
-    // --- SỬA LỖI TẠI ĐÂY (Thêm đoạn này vào) ---
-    // Biến này tên là "exam" -> Khớp với mappedBy = "exam" bên file Exams
+    // --- CÁC ĐÁP ÁN ---
+
+    // Ruby gửi: correct_answer
+    @JsonProperty("correct_answer")
+    @Column(name = "correct_answer", nullable = false)
+    private String correctAnswer;
+
+    // Ruby gửi: wrong_answer_1 -> Java nhận vào wrongAnswer1
+    @JsonProperty("wrong_answer_1")
+    @Column(name = "wrong_answer_1", nullable = false)
+    private String wrongAnswer1;
+
+    // Ruby gửi: wrong_answer_2
+    @JsonProperty("wrong_answer_2")
+    @Column(name = "wrong_answer_2", nullable = false)
+    private String wrongAnswer2;
+
+    // Ruby gửi: wrong_answer_3
+    @JsonProperty("wrong_answer_3")
+    @Column(name = "wrong_answer_3", nullable = false)
+    private String wrongAnswer3;
+
+    // --- TRẠNG THÁI (Manual Soft Delete) ---
+    // 1 = Active, 0 = Deleted
+    @Column(name = "status", nullable = false)
+    private Integer status = 1;
+
+    // --- QUAN HỆ ---
     @ManyToOne
-    @JoinColumn(name = "exam_id") // Tên cột khóa ngoại trong DB
+    @JoinColumn(name = "exam_id")
     private Exams exam;
 
-    // --- Quan hệ với KanjiCharacters (Đã làm đúng ở bước trước - Giữ nguyên) ---
     @ManyToMany
     @JoinTable(
             name = "kanji_characters_rel_question",
@@ -36,7 +66,7 @@ public class Questions {
     )
     private List<KanjiCharacters> kanjiCharacters;
 
-    // --- Audit Fields ---
+    // --- AUDIT FIELDS ---
     @CreationTimestamp
     @Column(name = "create_at", updatable = false)
     private LocalDateTime createAt;
