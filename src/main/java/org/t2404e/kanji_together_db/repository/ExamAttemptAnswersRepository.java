@@ -1,4 +1,7 @@
 package org.t2404e.kanji_together_db.repository;
 
-public interface ExamAttemptAnswersRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.t2404e.kanji_together_db.entity.ExamAttemptAnswers;
+
+public interface ExamAttemptAnswersRepository extends JpaRepository<ExamAttemptAnswers, Long> {
 }

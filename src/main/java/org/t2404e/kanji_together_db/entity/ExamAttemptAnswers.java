@@ -17,6 +17,10 @@ public class ExamAttemptAnswers {
     public ExamResults examResult;
 
     @ManyToOne
+    @JoinColumn(name = "user_id")
+    public Users user;
+
+    @ManyToOne
     @JoinColumn(name = "question_id")
     public Questions question;
 
@@ -26,4 +30,7 @@ public class ExamAttemptAnswers {
     public Boolean is_correct;
 
     public LocalDateTime answered_at;
+
+    @Column(name = "time_taken_ms")
+    public Long timeTakenMs;
 }

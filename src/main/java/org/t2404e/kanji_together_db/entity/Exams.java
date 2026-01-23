@@ -2,6 +2,7 @@ package org.t2404e.kanji_together_db.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
@@ -25,6 +26,7 @@ public class Exams {
     // --- QUAN HỆ VỚI QUESTIONS ---
     // mappedBy="exam" trỏ tới biến "private Exams exam;" ở file Questions
     @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<Questions> questions;
 
     // --- Audit Fields ---

@@ -1,6 +1,7 @@
 package org.t2404e.kanji_together_db.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty; // <--- QUAN TRỌNG: Thư viện để map tên JSON
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -56,6 +57,7 @@ public class Questions {
     // --- QUAN HỆ ---
     @ManyToOne
     @JoinColumn(name = "exam_id")
+    @JsonBackReference
     private Exams exam;
 
     @ManyToMany

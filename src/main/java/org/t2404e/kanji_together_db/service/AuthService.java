@@ -88,10 +88,6 @@ public class AuthService {
         Users user = usersRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không đúng"));
 
-        if (!Boolean.TRUE.equals(user.getIsVerified())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User chưa xác thực email");
-        }
-
         if (user.getPasswordHash() == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không đúng");
         }
