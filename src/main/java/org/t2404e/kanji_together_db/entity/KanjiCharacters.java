@@ -15,7 +15,9 @@ public class KanjiCharacters {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 10, unique = true)
+    // --- ĐÃ SỬA: Xóa "unique = true" ---
+    // Cho phép lưu nhiều bản ghi cùng tên (1 Active, nhiều Pending)
+    @Column(nullable = false, length = 10)
     private String kanji;
 
     @Column(name = "on_pronunciation")
@@ -60,13 +62,13 @@ public class KanjiCharacters {
     @ManyToMany(mappedBy = "kanjiCharacters")
     private List<KanjiLessons> lessons;
 
-    // Quan hệ 1-N với Stories (giữ nguyên)
     @OneToMany(mappedBy = "kanjiCharacter", cascade = CascadeType.ALL)
     private List<KanjiStories> stories;
 
     @ManyToMany(mappedBy = "kanjiCharacters")
     private List<Questions> questions;
-    // --- Audit Fields ---1
+
+    // --- Audit Fields ---
     @CreationTimestamp
     @Column(name = "create_at", updatable = false)
     private LocalDateTime createAt;
@@ -80,4 +82,7 @@ public class KanjiCharacters {
 
     @Column(name = "edit_by")
     private Integer editBy;
+
+    @Column(name = "status")
+    private String status;
 }
