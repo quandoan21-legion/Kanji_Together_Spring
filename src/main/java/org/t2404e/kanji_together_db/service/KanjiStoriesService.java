@@ -65,7 +65,8 @@ public class KanjiStoriesService {
             if (text == null || text.trim().isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mặt chữ Kanji không hợp lệ.");
             }
-            kanji = kanjiRepo.findByKanji(text).orElse(new KanjiCharacters());
+            // Code mới: Chỉ tìm bản Kanji Gốc (Active) để gán câu chuyện vào
+            kanji = kanjiRepo.findByKanjiAndIsActiveTrue(text).orElse(new KanjiCharacters());
             kanji.setKanji(text);
         }
 

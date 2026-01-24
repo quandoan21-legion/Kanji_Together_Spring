@@ -46,6 +46,9 @@ public class KanjiCharacterDTO {
     @JsonProperty("is_active")
     private Boolean isActive = true;
 
+    // --- TRẠNG THÁI (ACTIVE, PENDING, APPROVED, REJECTED, HIDDEN) ---
+    private String status;
+
     @JsonProperty("create_by")
     private Integer createBy;
 
