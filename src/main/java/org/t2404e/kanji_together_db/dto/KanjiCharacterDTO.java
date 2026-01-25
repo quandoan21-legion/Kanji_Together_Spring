@@ -1,7 +1,7 @@
 package org.t2404e.kanji_together_db.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.NotBlank;
+// XÓA DÒNG NÀY: import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 public class KanjiCharacterDTO {
     private Long id;
 
-    @NotBlank(message = "Chữ Kanji không được để trống")
+    // XÓA @NotBlank ở đây
     private String kanji;
 
     @JsonProperty("on_pronunciation")
@@ -27,10 +27,10 @@ public class KanjiCharacterDTO {
     @JsonProperty("kanji_description")
     private String kanjiDescription;
 
-    @NotBlank(message = "Hán Việt không được để trống")
+    // XÓA @NotBlank ở đây
     private String translation;
 
-    @NotBlank(message = "Nghĩa không được để trống")
+    // XÓA @NotBlank ở đây
     private String meaning;
 
     private String radical;
@@ -46,7 +46,6 @@ public class KanjiCharacterDTO {
     @JsonProperty("is_active")
     private Boolean isActive = true;
 
-    // --- TRẠNG THÁI (ACTIVE, PENDING, APPROVED, REJECTED, HIDDEN) ---
     private String status;
 
     @JsonProperty("create_by")

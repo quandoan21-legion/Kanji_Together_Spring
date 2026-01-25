@@ -1,6 +1,5 @@
 package org.t2404e.kanji_together_db.controller;
 
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,21 +43,24 @@ public class KanjiCharactersController {
     }
 
     // 4. TẠO MỚI BỞI ADMIN (Quản lý bản Gốc Master)
+    // [SỬA]: Xóa @Valid để dữ liệu đi thẳng xuống Service kiểm tra
     @PostMapping
-    public ResponseEntity<ApiResponse<KanjiCharacterDTO>> create(@Valid @RequestBody KanjiCharacterDTO dto) {
+    public ResponseEntity<ApiResponse<KanjiCharacterDTO>> create(@RequestBody KanjiCharacterDTO dto) {
         return new ResponseEntity<>(new ApiResponse<>(201, "Admin tạo Kanji thành công", service.create(dto)), HttpStatus.CREATED);
     }
 
     // 5. NGƯỜI DÙNG ĐÓNG GÓP (Tạo bản PENDING)
+    // [SỬA]: Xóa @Valid
     @PostMapping("/submit")
-    public ResponseEntity<ApiResponse<KanjiCharacterDTO>> submit(@Valid @RequestBody KanjiCharacterDTO dto) {
+    public ResponseEntity<ApiResponse<KanjiCharacterDTO>> submit(@RequestBody KanjiCharacterDTO dto) {
         // Gọi hàm createForUser để luôn tạo bản nháp mới
         return new ResponseEntity<>(new ApiResponse<>(201, "Đã gửi đóng góp, vui lòng chờ duyệt", service.createForUser(dto)), HttpStatus.CREATED);
     }
 
     // 6. CẬP NHẬT (Admin sửa trực tiếp bản ghi)
+    // [SỬA]: Xóa @Valid
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<KanjiCharacterDTO>> update(@PathVariable Long id, @Valid @RequestBody KanjiCharacterDTO dto) {
+    public ResponseEntity<ApiResponse<KanjiCharacterDTO>> update(@PathVariable Long id, @RequestBody KanjiCharacterDTO dto) {
         return ResponseEntity.ok(new ApiResponse<>(200, "Cập nhật thành công", service.update(id, dto)));
     }
 
@@ -68,10 +70,11 @@ public class KanjiCharactersController {
 
     // 7. DUYỆT BÀI (Approve -> Merge vào bản gốc -> Chuyển status APPROVED)
     // 7. DUYỆT BÀI (CÓ VALIDATE & NHẬN DỮ LIỆU TỪ ADMIN)
+    // [SỬA]: Xóa @Valid
     @PutMapping("/{id}/approve")
     public ResponseEntity<ApiResponse<KanjiCharacterDTO>> approve(
             @PathVariable Long id,
-            @Valid @RequestBody KanjiCharacterDTO finalData // <--- Thêm dòng này để nhận dữ liệu Admin đã sửa
+            @RequestBody KanjiCharacterDTO finalData // <--- Thêm dòng này để nhận dữ liệu Admin đã sửa
     ) {
         KanjiCharacterDTO result = service.approve(id, finalData);
         return ResponseEntity.ok(new ApiResponse<>(200, "Đã duyệt và xuất bản thành công", result));

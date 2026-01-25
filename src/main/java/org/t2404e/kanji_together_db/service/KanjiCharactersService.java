@@ -41,7 +41,7 @@ public class KanjiCharactersService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bài đóng góp ID: " + pendingId));
 
         // 2. CHUẨN HÓA & VALIDATE DỮ LIỆU ADMIN GỬI LÊN
-        // Chúng ta tin tưởng dữ liệu Admin gửi (finalDto) hơn là dữ liệu cũ trong DB
+
         normalizeData(finalDto);
         validateKanjiData(finalDto); // Bắt buộc Validate chặt chẽ trước khi Active
 
@@ -210,36 +210,123 @@ public class KanjiCharactersService {
         return input.trim().replaceAll("[ \\t]+", " ").replaceAll(",\\s*", ", ");
     }
 
-    // ==================================================================================
-    // 2. PHẦN VALIDATE DỮ LIỆU (Giữ nguyên logic cũ)
-    // ==================================================================================
+
     private void validateKanjiData(KanjiCharacterDTO dto) {
         Map<String, String> errors = new HashMap<>();
 
-        if (isEmpty(dto.getKanji())) errors.put("kanji", "Vui lòng điền chữ Kanji");
-        else if (!dto.getKanji().matches("^[\\u4E00-\\u9FAF]$")) errors.put("kanji", "Kanji phải là duy nhất 1 ký tự chữ Hán");
+        // 1. KANJI
+        if (isEmpty(dto.getKanji())) {
+            errors.put("kanji", "Chữ Kanji không được để trống");
+        } else if (!dto.getKanji().matches("^[\\u4E00-\\u9FAF]$")) {
+            errors.put("kanji", "Kanji phải là duy nhất 1 ký tự chữ Hán");
+        }
 
-        if (isEmpty(dto.getTranslation())) errors.put("translation", "Vui lòng điền âm Hán Việt");
+        // 2. HÁN VIỆT
+        if (isEmpty(dto.getTranslation())) {
+            errors.put("translation", "Hán Việt không được để trống");
+        } else if (!dto.getTranslation().matches("^[A-ZÀ-Ỹ\\s,]+$")) {
+            errors.put("translation", "Hán Việt phải viết IN HOA (VD: HƯU, NGHI)");
+        }
 
-        // ... (Giữ nguyên các validate chi tiết của bạn để tiết kiệm không gian) ...
-        // Validate JLPT, Strokes, Image URL, Meaning, Radical, Vocabulary, Examples, Pronunciation...
-        // Bạn copy lại y nguyên phần validate cũ vào đây nhé
+        // 3. JLPT
+        if (dto.getJlpt() == null) {
+            errors.put("jlpt", "Vui lòng chọn cấp độ JLPT");
+        } else if (dto.getJlpt() < 1 || dto.getJlpt() > 5) {
+            errors.put("jlpt", "Cấp độ JLPT phải từ N5 đến N1");
+        }
 
-        if (dto.getJlpt() == null || dto.getJlpt() < 1 || dto.getJlpt() > 5) errors.put("jlpt", "Cấp độ JLPT phải từ N5 đến N1");
-        if (dto.getNumStrokes() == null || dto.getNumStrokes() <= 0 || dto.getNumStrokes() > 60) errors.put("num_strokes", "Số nét từ 1-60");
-        if (isEmpty(dto.getMeaning())) errors.put("meaning", "Vui lòng điền nghĩa");
+        // 4. SỐ NÉT
+        if (dto.getNumStrokes() == null) {
+            errors.put("num_strokes", "Vui lòng nhập số nét");
+        } else if (dto.getNumStrokes() <= 0 || dto.getNumStrokes() > 60) {
+            errors.put("num_strokes", "Số nét phải từ 1 đến 60");
+        }
 
-        if (!errors.isEmpty()) throw new CustomValidationException(errors);
+        // 5. NGHĨA
+        if (isEmpty(dto.getMeaning())) {
+            errors.put("meaning", "Nghĩa tiếng Việt không được để trống");
+        }
+
+        // 6. ÂM ON
+        if (isEmpty(dto.getOnPronunciation())) {
+            errors.put("on_pronunciation", "Âm On không được để trống");
+        } else if (!dto.getOnPronunciation().matches("^[\\u30A0-\\u30FF\\s.\\r\\n]+$")) {
+            errors.put("on_pronunciation", "Âm On sai format (Phải là Katakana)");
+        }
+
+        // 7. ÂM KUN
+        if (isEmpty(dto.getKunPronunciation())) {
+            errors.put("kun_pronunciation", "Âm Kun không được để trống");
+        } else if (!dto.getKunPronunciation().matches("^[\\u3040-\\u309F\\s.\\r\\n]+$")) {
+            errors.put("kun_pronunciation", "Âm Kun sai format (Phải là Hiragana)");
+        }
+
+        // 8. URL ẢNH
+        if (isEmpty(dto.getWritingImageUrl())) {
+            errors.put("writing_image_url", "URL ảnh không được để trống");
+        } else {
+            String url = dto.getWritingImageUrl().toLowerCase();
+            if (!url.startsWith("http") || !url.matches(".*\\.(gif|png|jpg|jpeg|svg)$")) {
+                errors.put("writing_image_url", "URL không hợp lệ");
+            }
+        }
+
+        // 9. BỘ THỦ
+        if (isEmpty(dto.getRadical())) {
+            errors.put("radical", "Bộ thủ không được để trống");
+        } else if (!dto.getRadical().matches("^[\\u4E00-\\u9FAF]\\s+[A-ZÀ-Ỹ\\s,]+$")) {
+            errors.put("radical", "Sai định dạng. VD đúng: '亻 NHÂN'");
+        }
+
+        // 10. CÂU CHUYỆN
+        if (isEmpty(dto.getKanjiDescription())) {
+            errors.put("kanji_description", "Câu chuyện không được để trống");
+        }
+
+        // 11. THÀNH PHẦN (Cái này là TÙY CHỌN -> Chỉ check format nếu có nhập)
+        if (!isEmpty(dto.getComponents())) {
+            String regex = "^[^\\p{P}\\p{S}\\d]\\s+\\p{Lu}\\p{Ll}*(?:\\s*,\\s*[^\\p{P}\\p{S}\\d]\\s+\\p{Lu}\\p{Ll}*)*$";
+            if (!dto.getComponents().matches(regex)) {
+                errors.put("components", "Sai định dạng. VD đúng: '木 Mộc, 目 Mục'");
+            }
+        }
+
+        // =========================================================
+        // SỬA Ở ĐÂY: CHUYỂN TỪ VỰNG VÀ VÍ DỤ THÀNH BẮT BUỘC
+        // =========================================================
+
+        // 12. TỪ VỰNG (BẮT BUỘC)
+        if (isEmpty(dto.getVocabulary())) {
+            errors.put("vocabulary", "Từ vựng không được để trống");
+        } else {
+            validateListRegex(dto.getVocabulary(),
+                    "^[^-\\r\\n]*[\\u3000-\\u30FF\\u4E00-\\u9FAF]+[^-\\r\\n]*-[^-\\r\\n]+-[^-\\r\\n]+$",
+                    "vocabulary", "Sai định dạng [NHẬT]-[PHIÊN ÂM]-[NGHĨA]", errors);
+        }
+
+        // 13. VÍ DỤ (BẮT BUỘC)
+        if (isEmpty(dto.getExamples())) {
+            errors.put("examples", "Ví dụ không được để trống");
+        } else {
+            validateListRegex(dto.getExamples(),
+                    "^[^-\\r\\n]*[\\u3000-\\u30FF\\u4E00-\\u9FAF]+[^-\\r\\n]*-[^-\\r\\n]+$",
+                    "examples", "Sai định dạng [CÂU NHẬT]-[DỊCH VIỆT]", errors);
+        }
+
+        // =========================================================
+
+        // NÉM LỖI TỔNG HỢP
+        if (!errors.isEmpty()) {
+            throw new CustomValidationException(errors);
+        }
     }
 
-    // ==================================================================================
-    // 3. CÁC HÀM HỖ TRỢ (Giữ nguyên)
-    // ==================================================================================
-    private void validateListStructure(String content, String regex, String field, String msg, Map<String, String> errors) {
+    // Đừng quên hàm hỗ trợ này
+    private void validateListRegex(String content, String regex, String field, String msg, Map<String, String> errors) {
         String[] lines = content.split("\\r?\\n");
         for (String line : lines) {
             if (!line.trim().isEmpty() && !line.matches(regex)) {
-                errors.put(field, "Dòng '" + line + "' " + msg);
+                errors.put(field, "Dòng '" + line + "' bị sai. " + msg);
                 break;
             }
         }
