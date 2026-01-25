@@ -8,7 +8,7 @@ import org.t2404e.kanji_together_db.entity.KanjiCharacters;
 import java.util.List;
 import java.util.Optional;
 
-public interface KanjiCharactersRepository extends JpaRepository<KanjiCharacters, Long> {
+public interface KanjiCharactersRepository extends JpaRepository<KanjiCharacters, Long>, KanjiCharactersRepositoryCustom {
 
     // [MỚI] Tìm bản gốc đang hoạt động (Chỉ có 1 bản Active cho mỗi chữ Kanji)
     Optional<KanjiCharacters> findByKanjiAndIsActiveTrue(String kanji);
@@ -28,7 +28,9 @@ public interface KanjiCharactersRepository extends JpaRepository<KanjiCharacters
             "(:keyword IS NULL OR :keyword = '' OR " +
             " lower(k.kanji) LIKE lower(concat('%', :keyword, '%')) OR " +
             " lower(k.meaning) LIKE lower(concat('%', :keyword, '%')) OR " +
-            " lower(k.translation) LIKE lower(concat('%', :keyword, '%'))) " +
+            " lower(k.translation) LIKE lower(concat('%', :keyword, '%')) OR " +
+            " lower(k.onPronunciation) LIKE lower(concat('%', :keyword, '%')) OR " +
+            " lower(k.kunPronunciation) LIKE lower(concat('%', :keyword, '%'))) " +
             "AND " +
             "(k.status IS NULL OR k.status <> 'DELETED') " +
             "AND " +

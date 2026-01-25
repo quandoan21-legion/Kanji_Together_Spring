@@ -27,6 +27,22 @@ public class KanjiCharactersService {
         return list.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
+    // Lấy danh sách với phân trang kiểu page (page size = 20)
+    public List<KanjiCharacterDTO> getAll(String keyword, Boolean isActive, String status, Integer page) {
+        if (page == null) {
+            return getAll(keyword, isActive, status);
+        }
+
+        if (page < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "page must be >= 0");
+        }
+
+        int limit = 20;
+        int offset = limit * page;
+        List<KanjiCharacters> list = repository.searchAndFilter(keyword, isActive, status, limit, offset);
+        return list.stream().map(this::mapToDTO).collect(Collectors.toList());
+    }
+
     // Lấy danh sách đóng góp của 1 chữ (Dành cho Admin xem lịch sử)
     public List<KanjiCharacterDTO> getContributions(String kanji) {
         return repository.findContributions(kanji).stream()

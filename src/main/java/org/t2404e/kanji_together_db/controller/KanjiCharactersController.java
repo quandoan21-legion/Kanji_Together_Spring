@@ -24,11 +24,12 @@ public class KanjiCharactersController {
             @RequestParam(name = "search", required = false) String search,
             @RequestParam(name = "kanji", required = false) String kanji,
             @RequestParam(name = "is_active", required = false) Boolean isActive,
-            @RequestParam(name = "status", required = false) String status // Tham số quan trọng để lọc PENDING
+            @RequestParam(name = "status", required = false) String status, // Tham số quan trọng để lọc PENDING
+            @RequestParam(name = "page", required = false) Integer page
     ) {
         String keyword = (search != null) ? search : kanji;
         // Gọi Service với đủ 3 tham số lọc
-        return ResponseEntity.ok(new ApiResponse<>(200, "Lấy danh sách thành công", service.getAll(keyword, isActive, status)));
+        return ResponseEntity.ok(new ApiResponse<>(200, "Lấy danh sách thành công", service.getAll(keyword, isActive, status, page)));
     }
 
     // 2. LẤY LỊCH SỬ ĐÓNG GÓP (MỚI - Dùng cho Admin xem ai đã đóng góp cho chữ này)
