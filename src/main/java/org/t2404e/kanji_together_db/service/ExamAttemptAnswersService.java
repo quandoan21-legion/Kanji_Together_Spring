@@ -58,6 +58,10 @@ public class ExamAttemptAnswersService {
         attempt.timeTakenMs = request.getTimeTakenMs();
 
         ExamAttemptAnswers saved = examAttemptAnswersRepository.save(attempt);
+        long attemptCount = examAttemptAnswersRepository.countByUser_IdAndQuestion_Id(
+                answerUser.getId(),
+                question.getId()
+        );
 
         ExamAttemptAnswerResponse response = new ExamAttemptAnswerResponse();
         response.setId(saved.id);
@@ -69,6 +73,11 @@ public class ExamAttemptAnswersService {
         response.setIsCorrect(resolution.isCorrect);
         response.setTimeTakenMs(saved.timeTakenMs);
         response.setAnsweredAt(saved.answered_at);
+        response.setAttemptCount(attemptCount);
+        response.setCorrectAnswer(question.getCorrectAnswer());
+        response.setWrongAnswer1(question.getWrongAnswer1());
+        response.setWrongAnswer2(question.getWrongAnswer2());
+        response.setWrongAnswer3(question.getWrongAnswer3());
         return response;
     }
 
