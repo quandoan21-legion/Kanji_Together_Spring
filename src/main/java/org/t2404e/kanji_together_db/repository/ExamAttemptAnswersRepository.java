@@ -4,4 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.t2404e.kanji_together_db.entity.ExamAttemptAnswers;
 
 public interface ExamAttemptAnswersRepository extends JpaRepository<ExamAttemptAnswers, Long> {
+    long countByUser_IdAndQuestion_Id(Long userId, Long questionId);
 }
