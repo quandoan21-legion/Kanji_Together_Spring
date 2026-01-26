@@ -3,6 +3,7 @@ package org.t2404e.kanji_together_db.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.t2404e.kanji_together_db.dto.KanjiCharacterDTO;
 import org.t2404e.kanji_together_db.entity.KanjiCharacters;
@@ -50,45 +51,46 @@ public class KanjiCharactersService {
                 .collect(Collectors.toList());
     }
 
-    // ADMIN: Duyệt bài (Có Validate dữ liệu đầu vào)
+    // ==================================================================================
+    // 1. LOGIC DUYỆT BÀI (APPROVE)
+    // ==================================================================================
+    @Transactional
     public KanjiCharacterDTO approve(Long pendingId, KanjiCharacterDTO finalDto) {
-        // 1. Lấy bản ghi Pending (để cập nhật status lịch sử sau này)
+        // Lấy bản ghi đóng góp (Pending)
         KanjiCharacters pendingEntity = repository.findById(pendingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bài đóng góp ID: " + pendingId));
 
-        // 2. CHUẨN HÓA & VALIDATE DỮ LIỆU ADMIN GỬI LÊN
-
         normalizeData(finalDto);
-        validateKanjiData(finalDto); // Bắt buộc Validate chặt chẽ trước khi Active
+        validateKanjiData(finalDto);
 
-        // 3. Xử lý Merge vào bản Gốc (Master)
-        // Tìm xem chữ này đã có bản gốc (Active/Hidden) chưa dựa trên Kanji mà Admin gửi
-        Optional<KanjiCharacters> masterOpt = repository.findByKanjiAndIsActiveTrue(finalDto.getKanji());
+        // TÌM BẢN GỐC (MASTER) - Tìm xuyên thấu mọi trạng thái (Sử dụng findFirstByKanji)
+        Optional<KanjiCharacters> masterOpt = repository.findFirstByKanji(finalDto.getKanji());
 
         KanjiCharacters masterEntity;
 
         if (masterOpt.isPresent()) {
-            // --- CẬP NHẬT CHỮ ĐÃ CÓ ---
             masterEntity = masterOpt.get();
+
+            // QUY TẮC: Nếu đã có và đang ACTIVE -> Chỉ cập nhật các trường bổ sung
+            if ("ACTIVE".equals(masterEntity.getStatus()) && Boolean.TRUE.equals(masterEntity.getIsActive())) {
+                updateSupplementaryFields(masterEntity, finalDto);
+            } else {
+                // QUY TẮC: Nếu đang ẨN hoặc ĐÃ XÓA -> Được phép sửa hết tất cả các trường
+                updateFullEntityData(masterEntity, finalDto);
+            }
         } else {
-            // --- TẠO BẢN GỐC MỚI TINH ---
+            // QUY TẮC: Nếu chưa có trên DB -> Tạo mới hoàn toàn
             masterEntity = new KanjiCharacters();
             masterEntity.setKanji(finalDto.getKanji());
+            updateFullEntityData(masterEntity, finalDto);
         }
 
-        // 4. COPY DỮ LIỆU TỪ FORM (finalDto) VÀO BẢN GỐC
-        // Lưu ý: Dùng updateEntityData với finalDto chứ KHÔNG dùng mapToDTO(pendingEntity)
-        updateEntityData(masterEntity, finalDto);
-
-        // Bắt buộc set Active và Status chuẩn
+        // Bắt buộc set Active và Status chuẩn khi Duyệt
         masterEntity.setIsActive(true);
         masterEntity.setStatus("ACTIVE");
-
-        // Lưu bản gốc
         repository.save(masterEntity);
 
-        // 5. CẬP NHẬT LỊCH SỬ (Bản Pending cũ)
-        // Nếu bản đóng góp khác bản gốc (khác ID), thì update status để lưu lịch sử
+        // CẬP NHẬT LỊCH SỬ: Đánh dấu bản đóng góp cũ là APPROVED
         if (!pendingEntity.getId().equals(masterEntity.getId())) {
             pendingEntity.setStatus("APPROVED");
             pendingEntity.setIsActive(false);
@@ -98,7 +100,7 @@ public class KanjiCharactersService {
         return mapToDTO(masterEntity);
     }
 
-    // --- [LOGIC MỚI] TỪ CHỐI BÀI ĐÓNG GÓP ---
+    // --- TỪ CHỐI BÀI ĐÓNG GÓP ---
     public void reject(Long id) {
         KanjiCharacters entity = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy"));
@@ -113,61 +115,33 @@ public class KanjiCharactersService {
         return mapToDTO(entity);
     }
 
-    // --- [LOGIC MỚI] TẠO BỞI ADMIN (QUẢN LÝ BẢN GỐC) ---
+    // ==================================================================================
+    // 2. LOGIC TẠO/SỬA BỞI ADMIN
+    // ==================================================================================
     public KanjiCharacterDTO create(KanjiCharacterDTO dto) {
         normalizeData(dto);
         validateKanjiData(dto);
 
-        // Tìm tất cả các bản ghi của chữ này
-        List<KanjiCharacters> existingList = repository.findAllByKanji(dto.getKanji());
-
-        // Ưu tiên tìm bản đang ACTIVE hoặc HIDDEN (Là bản gốc)
-        Optional<KanjiCharacters> masterOpt = existingList.stream()
-                .filter(k -> "ACTIVE".equals(k.getStatus()) || "HIDDEN".equals(k.getStatus()))
-                .findFirst();
-
+        Optional<KanjiCharacters> masterOpt = repository.findFirstByKanji(dto.getKanji());
         KanjiCharacters entity;
 
         if (masterOpt.isPresent()) {
-            // Nếu đã có bản gốc -> Admin sửa đè lên bản gốc
             entity = masterOpt.get();
-            if (Boolean.TRUE.equals(entity.getIsActive())) {
-                // Nếu muốn chặn Admin tạo trùng chữ đang Active thì mở comment dưới,
-                // còn logic hiện tại là cho phép sửa đè (Update).
-                // throw new CustomValidationException(Map.of("kanji", "Chữ này đang hoạt động!"));
+            // Nếu ACTIVE thì chỉ sửa bổ sung, nếu ẨN/XÓA thì sửa hết
+            if ("ACTIVE".equals(entity.getStatus()) && Boolean.TRUE.equals(entity.getIsActive())) {
+                updateSupplementaryFields(entity, dto);
+            } else {
+                updateFullEntityData(entity, dto);
             }
         } else {
-            // Chưa có bản gốc -> Tạo mới
             entity = new KanjiCharacters();
             entity.setKanji(dto.getKanji());
+            updateFullEntityData(entity, dto);
         }
 
-        updateEntityData(entity, dto);
         entity.setIsActive(true);
         entity.setStatus("ACTIVE");
-
         return mapToDTO(repository.save(entity));
-    }
-
-    // --- [LOGIC MỚI] TẠO BỞI USER (LUÔN TẠO DÒNG PENDING MỚI) ---
-    public KanjiCharacterDTO createForUser(KanjiCharacterDTO dto) {
-        normalizeData(dto);
-        validateKanjiOnly(dto);
-
-        // KHÔNG check trùng, KHÔNG check status cũ.
-        // Luôn tạo mới để đảm bảo tính công bằng cho người đóng góp.
-
-        KanjiCharacters pendingEntity = new KanjiCharacters();
-        pendingEntity.setKanji(dto.getKanji());
-
-        // Cập nhật dữ liệu
-        updateEntityDataIfPresent(pendingEntity, dto);
-
-        // Luôn set trạng thái chờ duyệt
-        pendingEntity.setIsActive(false);
-        pendingEntity.setStatus("PENDING");
-
-        return mapToDTO(repository.save(pendingEntity));
     }
 
     public KanjiCharacterDTO update(Long id, KanjiCharacterDTO dto) {
@@ -177,19 +151,12 @@ public class KanjiCharactersService {
         KanjiCharacters entity = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Kanji để sửa"));
 
-        // Nếu đổi chữ Kanji (Ví dụ sửa lỗi chính tả kanji)
-        if (dto.getKanji() != null && !dto.getKanji().equals(entity.getKanji())) {
-            // Chỉ báo lỗi nếu chữ mới đã có bản ACTIVE khác (tránh conflict 2 bản active)
-            Optional<KanjiCharacters> activeConflict = repository.findByKanjiAndIsActiveTrue(dto.getKanji());
-            if (activeConflict.isPresent()) {
-                Map<String, String> errors = new HashMap<>();
-                errors.put("kanji", "Chữ Kanji mới này đã có bản Active trong hệ thống!");
-                throw new CustomValidationException(errors);
-            }
-            entity.setKanji(dto.getKanji());
+        // Kiểm tra logic phân quyền sửa dựa trên trạng thái hiện tại của ID này
+        if ("ACTIVE".equals(entity.getStatus()) && Boolean.TRUE.equals(entity.getIsActive())) {
+            updateSupplementaryFields(entity, dto);
+        } else {
+            updateFullEntityData(entity, dto);
         }
-
-        updateEntityData(entity, dto);
 
         if (dto.getIsActive() != null) entity.setIsActive(dto.getIsActive());
         if (dto.getStatus() != null) entity.setStatus(dto.getStatus());
@@ -197,7 +164,22 @@ public class KanjiCharactersService {
         return mapToDTO(repository.save(entity));
     }
 
-    // XÓA MỀM (Giữ nguyên)
+    // USER: Đóng góp (Luôn tạo bản ghi PENDING mới)
+    public KanjiCharacterDTO createForUser(KanjiCharacterDTO dto) {
+        normalizeData(dto);
+        validateKanjiOnly(dto);
+
+        KanjiCharacters pendingEntity = new KanjiCharacters();
+        pendingEntity.setKanji(dto.getKanji());
+        updateEntityDataIfPresent(pendingEntity, dto);
+
+        pendingEntity.setIsActive(false);
+        pendingEntity.setStatus("PENDING");
+
+        return mapToDTO(repository.save(pendingEntity));
+    }
+
+    // XÓA MỀM
     public void delete(Long id) {
         KanjiCharacters entity = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy"));
@@ -207,7 +189,34 @@ public class KanjiCharactersService {
     }
 
     // ==================================================================================
-    // 1. PHẦN TỰ ĐỘNG LÀM SẠCH DỮ LIỆU (Giữ nguyên)
+    // 3. CÁC HÀM CẬP NHẬT DỮ LIỆU PHÂN TẦNG
+    // ==================================================================================
+
+    // Cập nhật TOÀN BỘ (Dành cho bản mới hoặc bản Ẩn/Xóa)
+    private void updateFullEntityData(KanjiCharacters entity, KanjiCharacterDTO dto) {
+        entity.setTranslation(dto.getTranslation());
+        entity.setMeaning(dto.getMeaning());
+        entity.setJlpt(dto.getJlpt());
+        entity.setNumStrokes(dto.getNumStrokes());
+        entity.setRadical(dto.getRadical());
+        entity.setComponents(dto.getComponents());
+        entity.setOnPronunciation(dto.getOnPronunciation());
+        entity.setKunPronunciation(dto.getKunPronunciation());
+
+        // Gọi tiếp hàm cập nhật thông tin bổ sung
+        updateSupplementaryFields(entity, dto);
+    }
+
+    // CHỈ cập nhật thông tin bổ sung (Dành cho bản đang ACTIVE)
+    private void updateSupplementaryFields(KanjiCharacters entity, KanjiCharacterDTO dto) {
+        entity.setKanjiDescription(dto.getKanjiDescription());
+        entity.setVocabulary(dto.getVocabulary());
+        entity.setExamples(dto.getExamples());
+        entity.setWritingImageUrl(dto.getWritingImageUrl());
+    }
+
+    // ==================================================================================
+    // 4. VALIDATION & NORMALIZATION (Giữ nguyên các chức năng cũ)
     // ==================================================================================
     private void normalizeData(KanjiCharacterDTO dto) {
         if (dto.getKanji() != null) dto.setKanji(dto.getKanji().trim());
@@ -226,58 +235,49 @@ public class KanjiCharactersService {
         return input.trim().replaceAll("[ \\t]+", " ").replaceAll(",\\s*", ", ");
     }
 
-
     private void validateKanjiData(KanjiCharacterDTO dto) {
         Map<String, String> errors = new HashMap<>();
 
-        // 1. KANJI
         if (isEmpty(dto.getKanji())) {
             errors.put("kanji", "Chữ Kanji không được để trống");
         } else if (!dto.getKanji().matches("^[\\u4E00-\\u9FAF]$")) {
             errors.put("kanji", "Kanji phải là duy nhất 1 ký tự chữ Hán");
         }
 
-        // 2. HÁN VIỆT
         if (isEmpty(dto.getTranslation())) {
             errors.put("translation", "Hán Việt không được để trống");
         } else if (!dto.getTranslation().matches("^[A-ZÀ-Ỹ\\s,]+$")) {
             errors.put("translation", "Hán Việt phải viết IN HOA (VD: HƯU, NGHI)");
         }
 
-        // 3. JLPT
         if (dto.getJlpt() == null) {
             errors.put("jlpt", "Vui lòng chọn cấp độ JLPT");
         } else if (dto.getJlpt() < 1 || dto.getJlpt() > 5) {
             errors.put("jlpt", "Cấp độ JLPT phải từ N5 đến N1");
         }
 
-        // 4. SỐ NÉT
         if (dto.getNumStrokes() == null) {
             errors.put("num_strokes", "Vui lòng nhập số nét");
         } else if (dto.getNumStrokes() <= 0 || dto.getNumStrokes() > 60) {
             errors.put("num_strokes", "Số nét phải từ 1 đến 60");
         }
 
-        // 5. NGHĨA
         if (isEmpty(dto.getMeaning())) {
             errors.put("meaning", "Nghĩa tiếng Việt không được để trống");
         }
 
-        // 6. ÂM ON
         if (isEmpty(dto.getOnPronunciation())) {
             errors.put("on_pronunciation", "Âm On không được để trống");
         } else if (!dto.getOnPronunciation().matches("^[\\u30A0-\\u30FF\\s.\\r\\n]+$")) {
             errors.put("on_pronunciation", "Âm On sai format (Phải là Katakana)");
         }
 
-        // 7. ÂM KUN
         if (isEmpty(dto.getKunPronunciation())) {
             errors.put("kun_pronunciation", "Âm Kun không được để trống");
         } else if (!dto.getKunPronunciation().matches("^[\\u3040-\\u309F\\s.\\r\\n]+$")) {
             errors.put("kun_pronunciation", "Âm Kun sai format (Phải là Hiragana)");
         }
 
-        // 8. URL ẢNH
         if (isEmpty(dto.getWritingImageUrl())) {
             errors.put("writing_image_url", "URL ảnh không được để trống");
         } else {
@@ -287,19 +287,16 @@ public class KanjiCharactersService {
             }
         }
 
-        // 9. BỘ THỦ
         if (isEmpty(dto.getRadical())) {
             errors.put("radical", "Bộ thủ không được để trống");
         } else if (!dto.getRadical().matches("^[\\u4E00-\\u9FAF]\\s+[A-ZÀ-Ỹ\\s,]+$")) {
             errors.put("radical", "Sai định dạng. VD đúng: '亻 NHÂN'");
         }
 
-        // 10. CÂU CHUYỆN
         if (isEmpty(dto.getKanjiDescription())) {
             errors.put("kanji_description", "Câu chuyện không được để trống");
         }
 
-        // 11. THÀNH PHẦN (Cái này là TÙY CHỌN -> Chỉ check format nếu có nhập)
         if (!isEmpty(dto.getComponents())) {
             String regex = "^[^\\p{P}\\p{S}\\d]\\s+\\p{Lu}\\p{Ll}*(?:\\s*,\\s*[^\\p{P}\\p{S}\\d]\\s+\\p{Lu}\\p{Ll}*)*$";
             if (!dto.getComponents().matches(regex)) {
@@ -307,11 +304,6 @@ public class KanjiCharactersService {
             }
         }
 
-        // =========================================================
-        // SỬA Ở ĐÂY: CHUYỂN TỪ VỰNG VÀ VÍ DỤ THÀNH BẮT BUỘC
-        // =========================================================
-
-        // 12. TỪ VỰNG (BẮT BUỘC)
         if (isEmpty(dto.getVocabulary())) {
             errors.put("vocabulary", "Từ vựng không được để trống");
         } else {
@@ -320,7 +312,6 @@ public class KanjiCharactersService {
                     "vocabulary", "Sai định dạng [NHẬT]-[PHIÊN ÂM]-[NGHĨA]", errors);
         }
 
-        // 13. VÍ DỤ (BẮT BUỘC)
         if (isEmpty(dto.getExamples())) {
             errors.put("examples", "Ví dụ không được để trống");
         } else {
@@ -329,15 +320,11 @@ public class KanjiCharactersService {
                     "examples", "Sai định dạng [CÂU NHẬT]-[DỊCH VIỆT]", errors);
         }
 
-        // =========================================================
-
-        // NÉM LỖI TỔNG HỢP
         if (!errors.isEmpty()) {
             throw new CustomValidationException(errors);
         }
     }
 
-    // Đừng quên hàm hỗ trợ này
     private void validateListRegex(String content, String regex, String field, String msg, Map<String, String> errors) {
         String[] lines = content.split("\\r?\\n");
         for (String line : lines) {
@@ -346,11 +333,6 @@ public class KanjiCharactersService {
                 break;
             }
         }
-    }
-
-    private void validatePronunciation(String content, String regex, String field, String msg, Map<String, String> errors) {
-        if (isEmpty(content)) errors.put(field, "Vui lòng nhập dữ liệu");
-        else if (!content.matches(regex)) errors.put(field, msg);
     }
 
     private void validateKanjiOnly(KanjiCharacterDTO dto) {
@@ -362,22 +344,6 @@ public class KanjiCharactersService {
 
     private boolean isEmpty(String str) {
         return str == null || str.trim().isEmpty();
-    }
-
-    private void updateEntityData(KanjiCharacters entity, KanjiCharacterDTO dto) {
-        entity.setOnPronunciation(dto.getOnPronunciation());
-        entity.setKunPronunciation(dto.getKunPronunciation());
-        entity.setNumStrokes(dto.getNumStrokes());
-        entity.setJlpt(dto.getJlpt());
-        entity.setKanjiDescription(dto.getKanjiDescription());
-        entity.setTranslation(dto.getTranslation());
-        entity.setMeaning(dto.getMeaning());
-        entity.setRadical(dto.getRadical());
-        entity.setComponents(dto.getComponents());
-        entity.setWritingImageUrl(dto.getWritingImageUrl());
-        entity.setVocabulary(dto.getVocabulary());
-        entity.setExamples(dto.getExamples());
-        if (dto.getStatus() != null) entity.setStatus(dto.getStatus());
     }
 
     private void updateEntityDataIfPresent(KanjiCharacters entity, KanjiCharacterDTO dto) {
@@ -393,7 +359,6 @@ public class KanjiCharactersService {
         if (dto.getWritingImageUrl() != null) entity.setWritingImageUrl(dto.getWritingImageUrl());
         if (dto.getVocabulary() != null) entity.setVocabulary(dto.getVocabulary());
         if (dto.getExamples() != null) entity.setExamples(dto.getExamples());
-        if (dto.getStatus() != null) entity.setStatus(dto.getStatus());
     }
 
     private KanjiCharacterDTO mapToDTO(KanjiCharacters entity) {

@@ -1,20 +1,35 @@
 package org.t2404e.kanji_together_db.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 import org.t2404e.kanji_together_db.entity.Questions;
+import org.t2404e.kanji_together_db.enums.QuestionType;
+
 import java.util.List;
 
+@Repository
 public interface QuestionsRepository extends JpaRepository<Questions, Long> {
 
-    // Tìm tất cả câu đang hoạt động (Status = 1)
-    List<Questions> findAllByStatus(Integer status);
-
-    // Lọc theo loại và status
-    List<Questions> findByQuestionTypeAndStatus(String questionType, Integer status);
-
-    // Tìm kiếm theo nội dung và status
-    List<Questions> findByQuestionTextContainingAndStatus(String text, Integer status);
-
-    // Lọc theo Exam ID và status
-    List<Questions> findByExamIdAndStatus(Long examId, Integer status);
+    @Query("SELECT DISTINCT q FROM Questions q " +
+            "LEFT JOIN q.kanjiCharacters k " +
+            "WHERE q.status = 1 " +
+            "AND (:examId IS NULL OR q.exam.id = :examId) " +
+            "AND (:type IS NULL OR q.questionType = :type) " +
+            "AND (:keyword IS NULL OR :keyword = '' OR " +
+            "   LOWER(q.questionText) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   LOWER(q.correctAnswer) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   LOWER(q.wrongAnswer1) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   LOWER(q.wrongAnswer2) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   LOWER(q.wrongAnswer3) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   LOWER(k.kanji) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   LOWER(k.meaning) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "   LOWER(k.translation) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Questions> searchQuestions(@Param("type") QuestionType type,
+                                    @Param("keyword") String keyword,
+                                    @Param("examId") Long examId,
+                                    Pageable pageable);
 }

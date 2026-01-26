@@ -19,9 +19,6 @@ public class Exams {
     @Column(nullable = false)
     private String name;
 
-    // Ví dụ các cột khác của bạn
-    // private String question;
-    // private String examType;
 
     // --- QUAN HỆ VỚI QUESTIONS ---
     // mappedBy="exam" trỏ tới biến "private Exams exam;" ở file Questions

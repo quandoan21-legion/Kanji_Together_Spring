@@ -1,7 +1,6 @@
 package org.t2404e.kanji_together_db.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-// XÓA DÒNG NÀY: import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -9,7 +8,6 @@ import java.time.LocalDateTime;
 public class KanjiCharacterDTO {
     private Long id;
 
-    // XÓA @NotBlank ở đây
     private String kanji;
 
     @JsonProperty("on_pronunciation")
@@ -27,10 +25,8 @@ public class KanjiCharacterDTO {
     @JsonProperty("kanji_description")
     private String kanjiDescription;
 
-    // XÓA @NotBlank ở đây
     private String translation;
 
-    // XÓA @NotBlank ở đây
     private String meaning;
 
     private String radical;

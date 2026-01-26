@@ -3,6 +3,8 @@ package org.t2404e.kanji_together_db.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
@@ -60,17 +62,28 @@ public class KanjiCharacters {
     @Column(name = "examples", columnDefinition = "TEXT")
     private String examples;
 
+    // --- CÁC MỐI QUAN HỆ (LIST) CẦN CHẶN LOMBOK VÀ JSON ---
+
     @ManyToMany(mappedBy = "kanjiCharacters")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonIgnore // <--- [ĐÃ THÊM] Chặn vòng lặp qua Bài học (Lessons)
     private List<KanjiLessons> lessons;
 
     @OneToMany(mappedBy = "kanjiCharacter", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonIgnore // <--- [ĐÃ THÊM] Chặn vòng lặp qua Câu chuyện (Stories)
     private List<KanjiStories> stories;
 
     @ManyToMany(mappedBy = "kanjiCharacters")
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<Questions> questions;
 
     // --- Audit Fields ---
+
     @CreationTimestamp
     @Column(name = "create_at", updatable = false)
     private LocalDateTime createAt;
