@@ -1,13 +1,22 @@
 package org.t2404e.kanji_together_db.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.t2404e.kanji_together_db.dto.QuestionDTO;
+import org.t2404e.kanji_together_db.entity.Exams;
+import org.t2404e.kanji_together_db.entity.KanjiCharacters;
 import org.t2404e.kanji_together_db.entity.Questions;
+import org.t2404e.kanji_together_db.enums.QuestionType;
 import org.t2404e.kanji_together_db.exception.CustomValidationException;
+import org.t2404e.kanji_together_db.repository.ExamsRepository;
+import org.t2404e.kanji_together_db.repository.KanjiCharactersRepository;
 import org.t2404e.kanji_together_db.repository.QuestionsRepository;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,101 +27,107 @@ public class QuestionsService {
     @Autowired
     private QuestionsRepository repository;
 
-    // Lấy danh sách câu hỏi Active
-    public List<Questions> getAllActive() {
-        return repository.findAllByStatus(1);
+    @Autowired
+    private KanjiCharactersRepository kanjiRepository;
+
+    @Autowired
+    private ExamsRepository examsRepository;
+
+    /**
+     * Lấy danh sách câu hỏi tổng hợp với Phân trang, Tìm kiếm từ khóa, và Lọc theo Loại/Đề thi.
+     * Chức năng này thay thế hoàn toàn cho các hàm getAllActive, search, filterByType cũ.
+     */
+    public Page<Questions> getAllQuestions(String keyword, String typeStr, Long examId, Pageable pageable) {
+
+        // 1. Xử lý Keyword (tránh null để Query không bị lỗi)
+        String finalKeyword = (keyword == null) ? "" : keyword.trim();
+
+        // 2. Xử lý Loại câu hỏi (Chuyển String từ Frontend sang Enum an toàn)
+        QuestionType type = null;
+        if (typeStr != null && !typeStr.trim().isEmpty()) {
+            try {
+                type = QuestionType.valueOf(typeStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                type = null; // Nếu type sai định dạng thì không lọc theo type
+            }
+        }
+
+        // 3. Gọi Repository với đầy đủ 4 tham số: type, keyword, examId, pageable
+        return repository.searchQuestions(type, finalKeyword, examId, pageable);
     }
 
-    // Lọc theo loại (chỉ lấy Active)
-    public List<Questions> filterByType(String type) {
-        return repository.findByQuestionTypeAndStatus(type, 1);
-    }
+    // --- CÁC HÀM TRUY VẤN CHI TIẾT ---
 
-    // Lấy chi tiết
     public Questions getDetail(Long id) {
         return repository.findById(id)
-                .filter(q -> q.getStatus() == 1) // Chỉ lấy nếu đang Active
+                .filter(q -> q.getStatus() == 1)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy câu hỏi hoặc đã bị xóa"));
     }
 
-    // TẠO MỚI
-    public Questions create(Questions question) {
-        normalizeData(question);
-        validateQuestionData(question);
+    // --- CÁC HÀM THAY ĐỔI DỮ LIỆU (CREATE/UPDATE/DELETE) ---
 
-        // Mặc định Active khi tạo mới
+    public Questions create(QuestionDTO dto) {
+        validateDTO(dto);
+        Questions question = new Questions();
+        mapDtoToEntity(dto, question);
         question.setStatus(1);
-
         return repository.save(question);
     }
 
-    // CẬP NHẬT
-    public Questions update(Long id, Questions questionDetails) {
-        Questions existingQuestion = getDetail(id); // Đã bao gồm check tồn tại
-
-        normalizeData(questionDetails);
-        validateQuestionData(questionDetails);
-
-        // Update fields
-        existingQuestion.setQuestionType(questionDetails.getQuestionType());
-        existingQuestion.setQuestionText(questionDetails.getQuestionText());
-        existingQuestion.setCorrectAnswer(questionDetails.getCorrectAnswer());
-        existingQuestion.setWrongAnswer1(questionDetails.getWrongAnswer1());
-        existingQuestion.setWrongAnswer2(questionDetails.getWrongAnswer2());
-        existingQuestion.setWrongAnswer3(questionDetails.getWrongAnswer3());
+    public Questions update(Long id, QuestionDTO dto) {
+        Questions existingQuestion = getDetail(id);
+        validateDTO(dto);
+        mapDtoToEntity(dto, existingQuestion);
         return repository.save(existingQuestion);
     }
 
-    // XÓA MỀM (Soft Delete Manual)
     public void delete(Long id) {
-        Questions question = repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy câu hỏi để xóa"));
-
-        // Logic xóa mềm thủ công: Set status = 0
-        question.setStatus(0);
+        Questions question = getDetail(id);
+        question.setStatus(0); // Soft delete
         repository.save(question);
     }
 
-    // --- VALIDATION & NORMALIZATION (Giống KanjiCharacters) ---
+    // --- CÁC PHƯƠNG THỨC HỖ TRỢ (PRIVATE HELPERS) ---
 
-    private void normalizeData(Questions q) {
-        if (q.getQuestionText() != null) q.setQuestionText(q.getQuestionText().trim());
-        if (q.getCorrectAnswer() != null) q.setCorrectAnswer(q.getCorrectAnswer().trim());
-        if (q.getWrongAnswer1() != null) q.setWrongAnswer1(q.getWrongAnswer1().trim());
-        if (q.getWrongAnswer2() != null) q.setWrongAnswer2(q.getWrongAnswer2().trim());
-        if (q.getWrongAnswer3() != null) q.setWrongAnswer3(q.getWrongAnswer3().trim());
+    private void mapDtoToEntity(QuestionDTO dto, Questions entity) {
+        // Ánh xạ các trường cơ bản
+        entity.setQuestionType(dto.getQuestionType());
+
+        if (dto.getQuestionText() != null) entity.setQuestionText(dto.getQuestionText().trim());
+        if (dto.getCorrectAnswer() != null) entity.setCorrectAnswer(dto.getCorrectAnswer().trim());
+        if (dto.getWrongAnswer1() != null) entity.setWrongAnswer1(dto.getWrongAnswer1().trim());
+        if (dto.getWrongAnswer2() != null) entity.setWrongAnswer2(dto.getWrongAnswer2().trim());
+        if (dto.getWrongAnswer3() != null) entity.setWrongAnswer3(dto.getWrongAnswer3().trim());
+
+        // Liên kết với Đề thi (Exam)
+        if (dto.getExamId() != null) {
+            Exams exam = examsRepository.findById(dto.getExamId()).orElse(null);
+            entity.setExam(exam);
+        } else {
+            entity.setExam(null);
+        }
+
+        // Liên kết với danh sách KanjiCharacters
+        if (dto.getKanjiIds() != null) {
+            if (!dto.getKanjiIds().isEmpty()) {
+                List<KanjiCharacters> kanjis = kanjiRepository.findAllById(dto.getKanjiIds());
+                entity.setKanjiCharacters(kanjis);
+            } else {
+                entity.setKanjiCharacters(new ArrayList<>());
+            }
+        }
     }
 
-    private void validateQuestionData(Questions q) {
+    private void validateDTO(QuestionDTO dto) {
         Map<String, String> errors = new HashMap<>();
 
-        if (isEmpty(q.getQuestionType())) {
-            errors.put("question_type", "Vui lòng chọn loại câu hỏi");
-        }
-        if (isEmpty(q.getQuestionText())) {
-            errors.put("question_text", "Vui lòng nhập nội dung câu hỏi");
-        }
-        if (isEmpty(q.getCorrectAnswer())) {
-            errors.put("correct_answer", "Vui lòng nhập đáp án đúng");
-        }
-
-        if (isEmpty(q.getWrongAnswer1())) {
-            errors.put("wrong_answer_1", "Vui lòng nhập đáp án sai 1");
-        }
-        if (isEmpty(q.getWrongAnswer2())) {
-            errors.put("wrong_answer_2", "Vui lòng nhập đáp án sai 2");
-        }
-        if (isEmpty(q.getWrongAnswer3())) {
-            errors.put("wrong_answer_3", "Vui lòng nhập đáp án sai 3");
-        }
-        // --------------------------------------
+        if (dto.getQuestionType() == null) errors.put("question_type", "Vui lòng chọn loại câu hỏi");
+        if (dto.getQuestionText() == null || dto.getQuestionText().trim().isEmpty()) errors.put("question_text", "Nội dung câu hỏi không được để trống");
+        if (dto.getCorrectAnswer() == null || dto.getCorrectAnswer().trim().isEmpty()) errors.put("correct_answer", "Đáp án đúng không được để trống");
+        if (dto.getWrongAnswer1() == null || dto.getWrongAnswer1().trim().isEmpty()) errors.put("wrong_answer_1", "Thiếu đáp án sai 1");
 
         if (!errors.isEmpty()) {
             throw new CustomValidationException(errors);
         }
-    }
-
-    private boolean isEmpty(String str) {
-        return str == null || str.trim().isEmpty();
     }
 }
