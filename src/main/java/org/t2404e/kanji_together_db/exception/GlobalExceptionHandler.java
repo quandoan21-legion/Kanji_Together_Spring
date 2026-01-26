@@ -59,4 +59,22 @@ public class GlobalExceptionHandler {
         body.put("message", "Lỗi Server nội bộ: " + ex.getMessage());
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex) {
+        Map<String, Object> body = new HashMap<>();
+        Map<String, String> errors = new HashMap<>();
+
+        body.put("status", 409); // Conflict
+        body.put("message", "Lỗi xung đột dữ liệu!");
+
+        // Kiểm tra xem có phải lỗi trùng lặp Kanji không
+        if (ex.getMessage() != null && ex.getMessage().contains("uc_kanji_char")) {
+            errors.put("kanji", "Chữ Kanji này đã tồn tại trong hệ thống (Master)!");
+        } else {
+            errors.put("database", "Vi phạm ràng buộc dữ liệu hoặc khóa ngoại.");
+        }
+
+        body.put("errors", errors);
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
 }

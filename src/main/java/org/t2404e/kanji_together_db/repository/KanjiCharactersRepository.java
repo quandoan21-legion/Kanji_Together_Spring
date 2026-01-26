@@ -23,7 +23,7 @@ public interface KanjiCharactersRepository extends JpaRepository<KanjiCharacters
     // Các hàm cũ giữ nguyên
     List<KanjiCharacters> findAllByIsActiveTrue();
     List<KanjiCharacters> findAllByIsActiveFalse();
-
+    Optional<KanjiCharacters> findFirstByKanji(String kanji);
     @Query("SELECT k FROM KanjiCharacters k WHERE " +
             "(:keyword IS NULL OR :keyword = '' OR " +
             " lower(k.kanji) LIKE lower(concat('%', :keyword, '%')) OR " +
