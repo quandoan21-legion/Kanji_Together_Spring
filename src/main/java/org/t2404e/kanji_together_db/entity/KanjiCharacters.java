@@ -62,6 +62,8 @@ public class KanjiCharacters {
     @Column(name = "examples", columnDefinition = "TEXT")
     private String examples;
 
+    // --- CÁC MỐI QUAN HỆ (LIST) CẦN CHẶN LOMBOK VÀ JSON ---
+
     @ManyToMany(mappedBy = "kanjiCharacters")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -81,6 +83,7 @@ public class KanjiCharacters {
     private List<Questions> questions;
 
     // --- Audit Fields ---
+
     @CreationTimestamp
     @Column(name = "create_at", updatable = false)
     private LocalDateTime createAt;
