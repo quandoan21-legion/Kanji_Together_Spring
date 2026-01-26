@@ -1,5 +1,6 @@
 package org.t2404e.kanji_together_db.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -66,6 +67,7 @@ public class KanjiCharacters {
     private List<KanjiStories> stories;
 
     @ManyToMany(mappedBy = "kanjiCharacters")
+    @JsonIgnore
     private List<Questions> questions;
 
     // --- Audit Fields ---

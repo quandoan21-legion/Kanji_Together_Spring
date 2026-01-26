@@ -1,5 +1,6 @@
 package org.t2404e.kanji_together_db.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -71,5 +72,6 @@ public class KanjiStories {
     private String rejectReason;
     @ManyToOne
     @JoinColumn(name = "kanji_id", nullable = true)
+    @JsonIgnore
     private KanjiCharacters kanjiCharacter;
 }
