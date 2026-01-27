@@ -30,10 +30,10 @@ public class UserDeviceTokensService {
         Users user = usersRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy user"));
 
-        Optional<UserDeviceTokens> existing = userDeviceTokensRepository.findByToken(request.getToken());
+        Optional<UserDeviceTokens> existing = userDeviceTokensRepository.findByFcmToken(request.getFcmToken());
         UserDeviceTokens record = existing.orElseGet(UserDeviceTokens::new);
         record.setUser(user);
-        record.setToken(request.getToken());
+        record.setFcmToken(request.getFcmToken());
         record.setPlatform(request.getPlatform());
         record.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);
         record.setLastSeenAt(LocalDateTime.now());
@@ -54,7 +54,7 @@ public class UserDeviceTokensService {
     public DeviceTokenResponse deactivate(DeviceTokenRequest request) {
         validateRequest(request);
 
-        UserDeviceTokens record = userDeviceTokensRepository.findByUser_IdAndToken(request.getUserId(), request.getToken())
+        UserDeviceTokens record = userDeviceTokensRepository.findByUser_IdAndFcmToken(request.getUserId(), request.getFcmToken())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy device token"));
 
         record.setIsActive(false);
@@ -63,7 +63,7 @@ public class UserDeviceTokensService {
     }
 
     private void validateRequest(DeviceTokenRequest request) {
-        if (request == null || request.getUserId() == null || isBlank(request.getToken())) {
+        if (request == null || request.getUserId() == null || isBlank(request.getFcmToken())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Thiếu user_id hoặc token");
         }
     }
@@ -76,8 +76,10 @@ public class UserDeviceTokensService {
         DeviceTokenResponse response = new DeviceTokenResponse();
         response.setId(record.getId());
         response.setUserId(record.getUser() != null ? record.getUser().getId() : null);
-        response.setToken(record.getToken());
+        response.setFcmToken(record.getFcmToken());
         response.setPlatform(record.getPlatform());
+        response.setDeviceId(record.getDeviceId());
+        response.setAppVersion(record.getAppVersion());
         response.setIsActive(record.getIsActive());
         response.setLastSeenAt(record.getLastSeenAt());
         response.setCreateAt(record.getCreateAt());

@@ -69,7 +69,7 @@ public class FailedKanjiNotificationScheduler {
                 .filter(token -> token.getUser() != null && token.getUser().getId() != null)
                 .collect(Collectors.groupingBy(
                         token -> token.getUser().getId(),
-                        Collectors.mapping(UserDeviceTokens::getToken, Collectors.toList())
+                        Collectors.mapping(UserDeviceTokens::getFcmToken, Collectors.toList())
                 ));
 
         for (Map.Entry<Long, Set<String>> entry : kanjiByUser.entrySet()) {

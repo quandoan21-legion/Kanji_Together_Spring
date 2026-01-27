@@ -2,6 +2,7 @@ package org.t2404e.kanji_together_db.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import org.t2404e.kanji_together_db.enums.DevicePlatform;
 
 import java.time.LocalDateTime;
 
@@ -12,9 +13,16 @@ public class DeviceTokenResponse {
     @JsonProperty("user_id")
     private Long userId;
 
-    private String token;
+    @JsonProperty("fcm_token")
+    private String fcmToken;
 
-    private String platform;
+    private DevicePlatform platform;
+
+    @JsonProperty("device_id")
+    private String deviceId;
+
+    @JsonProperty("app_version")
+    private String appVersion;
 
     @JsonProperty("is_active")
     private Boolean isActive;

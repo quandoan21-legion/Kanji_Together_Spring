@@ -134,7 +134,7 @@ public class FailedKanjiNotificationService {
         return userDeviceTokensRepository
                 .findByUser_IdInAndIsActiveTrue(List.of(userId))
                 .stream()
-                .map(UserDeviceTokens::getToken)
+                .map(UserDeviceTokens::getFcmToken)
                 .filter(Objects::nonNull)
                 .map(String::trim)
                 .filter(token -> !token.isEmpty())

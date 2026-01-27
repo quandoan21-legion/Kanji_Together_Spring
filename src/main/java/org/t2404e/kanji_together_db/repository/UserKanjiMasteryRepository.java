@@ -22,9 +22,20 @@ public interface UserKanjiMasteryRepository extends JpaRepository<UserKanjiMaste
 
     Optional<UserKanjiMastery> findByUser_IdAndKanji_Id(Long userId, Long kanjiId);
 
-    List<UserKanjiMastery> findByUser_IdAndNextReviewAtLessThanEqualOrderByNextReviewAtAsc(
-            Long userId,
-            LocalDateTime nextReviewAt,
+    @Query("""
+            SELECT m
+            FROM UserKanjiMastery m
+            WHERE m.user.id = :userId
+              AND m.nextReviewAt <= :now
+              AND m.kanji.status = 'ACTIVE'
+            ORDER BY m.nextReviewAt ASC
+            """)
+    List<UserKanjiMastery> findDueActiveByUserId(
+            @Param("userId") Long userId,
+            @Param("now") LocalDateTime now,
             Pageable pageable
     );
+
+    @Query("SELECT DISTINCT m.user.id FROM UserKanjiMastery m WHERE m.nextReviewAt <= :now AND m.kanji.status = 'ACTIVE'")
+    List<Long> findDistinctUserIdsDue(@Param("now") LocalDateTime now);
 }

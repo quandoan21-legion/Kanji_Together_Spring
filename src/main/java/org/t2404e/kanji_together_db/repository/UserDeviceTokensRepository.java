@@ -10,9 +10,11 @@ import java.util.Optional;
 public interface UserDeviceTokensRepository extends JpaRepository<UserDeviceTokens, Long> {
     List<UserDeviceTokens> findByUser_IdInAndIsActiveTrue(Collection<Long> userIds);
 
+    List<UserDeviceTokens> findByUser_IdAndIsActiveTrue(Long userId);
+
     List<UserDeviceTokens> findByUser_Id(Long userId);
 
-    Optional<UserDeviceTokens> findByUser_IdAndToken(Long userId, String token);
+    Optional<UserDeviceTokens> findByUser_IdAndFcmToken(Long userId, String fcmToken);
 
-    Optional<UserDeviceTokens> findByToken(String token);
+    Optional<UserDeviceTokens> findByFcmToken(String fcmToken);
 }

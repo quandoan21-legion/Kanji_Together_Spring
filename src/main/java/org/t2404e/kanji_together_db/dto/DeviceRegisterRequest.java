@@ -1,21 +1,19 @@
 package org.t2404e.kanji_together_db.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import org.t2404e.kanji_together_db.enums.DevicePlatform;
 
 @Data
-public class DeviceTokenRequest {
-    @JsonProperty("user_id")
-    private Long userId;
-
+public class DeviceRegisterRequest {
     @JsonAlias({"token", "fcm_token"})
     private String fcmToken;
 
     private DevicePlatform platform;
 
-    @JsonProperty("is_active")
-    private Boolean isActive;
+    @JsonAlias("device_id")
+    private String deviceId;
 
+    @JsonAlias("app_version")
+    private String appVersion;
 }

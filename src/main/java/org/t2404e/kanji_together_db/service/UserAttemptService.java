@@ -1,5 +1,6 @@
 package org.t2404e.kanji_together_db.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -37,6 +38,8 @@ public class UserAttemptService {
     private final UserQuestionAttemptRepository userQuestionAttemptRepository;
     private final UserKanjiAttemptRepository userKanjiAttemptRepository;
     private final UserKanjiMasteryRepository userKanjiMasteryRepository;
+    @Value("${spaced-repetition.next-review-immediate:false}")
+    private boolean nextReviewImmediate;
 
     public UserAttemptService(UsersRepository usersRepository,
                               QuestionsRepository questionsRepository,
@@ -122,7 +125,7 @@ public class UserAttemptService {
         }
 
         List<UserKanjiMastery> due = userKanjiMasteryRepository
-                .findByUser_IdAndNextReviewAtLessThanEqualOrderByNextReviewAtAsc(
+                .findDueActiveByUserId(
                         userId,
                         LocalDateTime.now(),
                         PageRequest.of(0, limit)
@@ -149,7 +152,7 @@ public class UserAttemptService {
             }
         }
 
-        SpacedRepetitionCalculator.apply(mastery, correct, now);
+        SpacedRepetitionCalculator.apply(mastery, correct, now, nextReviewImmediate);
         return userKanjiMasteryRepository.save(mastery);
     }
 

@@ -1,15 +1,21 @@
 package org.t2404e.kanji_together_db.service.notifications;
 
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.messaging.BatchResponse;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.MessagingErrorCode;
+import com.google.firebase.messaging.MulticastMessage;
+import com.google.firebase.messaging.Notification;
+import com.google.firebase.messaging.SendResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.t2404e.kanji_together_db.enums.NotificationStatus;
+import org.t2404e.kanji_together_db.repository.UserDeviceTokensRepository;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,16 +23,11 @@ import java.util.Map;
 public class FcmPushNotificationService implements PushNotificationService {
     private static final Logger logger = LoggerFactory.getLogger(FcmPushNotificationService.class);
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final UserDeviceTokensRepository userDeviceTokensRepository;
 
-    @Value("${fcm.project-id:}")
-    private String projectId;
-
-    @Value("${fcm.access-token:}")
-    private String accessToken;
-
-    @Value("${fcm.endpoint-template:https://fcm.googleapis.com/v1/projects/%s/messages:send}")
-    private String endpointTemplate;
+    public FcmPushNotificationService(UserDeviceTokensRepository userDeviceTokensRepository) {
+        this.userDeviceTokensRepository = userDeviceTokensRepository;
+    }
 
     @Override
     public void sendToTokens(Long userId, List<String> tokens, String title, String body, Map<String, String> data) {
@@ -38,45 +39,87 @@ public class FcmPushNotificationService implements PushNotificationService {
         if (tokens == null || tokens.isEmpty()) {
             return;
         }
-        String resolvedAccessToken = resolveAccessToken(accessTokenOverride);
-        if (projectId == null || projectId.isBlank() || resolvedAccessToken == null || resolvedAccessToken.isBlank()) {
-            logger.warn("FCM not configured. Skipping push for userId={}, tokens={}, title={}", userId, tokens.size(), title);
+        if (FirebaseApp.getApps().isEmpty()) {
+            logger.warn("Firebase not initialized. Skipping push for userId={}, tokens={}, title={}", userId, tokens.size(), title);
             return;
         }
-
-        String endpoint = String.format(endpointTemplate, projectId);
         for (String token : tokens) {
             if (token == null || token.isBlank()) {
                 continue;
             }
-            Map<String, Object> payload = Map.of(
-                    "message", Map.of(
-                            "token", token,
-                            "notification", Map.of(
-                                    "title", title,
-                                    "body", body
-                            ),
-                            "data", data != null ? data : Map.of()
-                    )
-            );
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(resolvedAccessToken);
-
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
             try {
-                restTemplate.postForEntity(endpoint, request, String.class);
-            } catch (RestClientException ex) {
+                Message message = Message.builder()
+                        .setToken(token)
+                        .setNotification(Notification.builder()
+                                .setTitle(title)
+                                .setBody(body)
+                                .build())
+                        .putAllData(data != null ? data : Map.of())
+                        .build();
+                FirebaseMessaging.getInstance().send(message);
+            } catch (FirebaseMessagingException ex) {
                 logger.warn("FCM push failed for userId={}, token={}, error={}", userId, token, ex.getMessage());
+                if (isInvalidToken(ex)) {
+                    deactivateToken(token);
+                }
             }
         }
     }
 
-    private String resolveAccessToken(String override) {
-        if (override != null && !override.isBlank()) {
-            return override.trim();
+    public FcmBatchResult sendMulticast(Long userId, List<String> tokens, String title, String body, Map<String, String> data) {
+        if (tokens == null || tokens.isEmpty()) {
+            return new FcmBatchResult(Map.of(), Map.of(), "no_tokens");
         }
-        return accessToken != null ? accessToken.trim() : null;
+        if (FirebaseApp.getApps().isEmpty()) {
+            logger.warn("Firebase not initialized. Skipping push for userId={}, tokens={}, title={}", userId, tokens.size(), title);
+            return new FcmBatchResult(Map.of(), Map.of("batch", "firebase_not_initialized"), "firebase_not_initialized");
+        }
+
+        MulticastMessage message = MulticastMessage.builder()
+                .addAllTokens(tokens)
+                .setNotification(Notification.builder()
+                        .setTitle(title)
+                        .setBody(body)
+                        .build())
+                .putAllData(data != null ? data : Map.of())
+                .build();
+
+        try {
+            BatchResponse response = FirebaseMessaging.getInstance().sendEachForMulticast(message);
+            Map<String, NotificationStatus> statuses = new LinkedHashMap<>();
+            Map<String, String> errors = new LinkedHashMap<>();
+            List<SendResponse> responses = response.getResponses();
+            for (int i = 0; i < responses.size(); i++) {
+                String token = tokens.get(i);
+                SendResponse sendResponse = responses.get(i);
+                if (sendResponse.isSuccessful()) {
+                    statuses.put(token, NotificationStatus.SENT);
+                } else {
+                    statuses.put(token, NotificationStatus.FAILED);
+                    FirebaseMessagingException exception = sendResponse.getException();
+                    String errorMessage = exception != null ? exception.getMessage() : "Unknown error";
+                    errors.put(token, errorMessage);
+                    if (exception != null && isInvalidToken(exception)) {
+                        deactivateToken(token);
+                    }
+                }
+            }
+            return new FcmBatchResult(statuses, errors, null);
+        } catch (FirebaseMessagingException ex) {
+            logger.warn("FCM multicast failed for userId={}, tokens={}, error={}", userId, tokens.size(), ex.getMessage());
+            return new FcmBatchResult(Map.of(), Map.of("batch", ex.getMessage()), "fcm_error");
+        }
+    }
+
+    private boolean isInvalidToken(FirebaseMessagingException ex) {
+        MessagingErrorCode code = ex.getMessagingErrorCode();
+        return code == MessagingErrorCode.UNREGISTERED || code == MessagingErrorCode.INVALID_ARGUMENT;
+    }
+
+    private void deactivateToken(String token) {
+        userDeviceTokensRepository.findByFcmToken(token).ifPresent(record -> {
+            record.setIsActive(false);
+            userDeviceTokensRepository.save(record);
+        });
     }
 }

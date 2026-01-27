@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.t2404e.kanji_together_db.enums.DevicePlatform;
 
 import java.time.LocalDateTime;
 
@@ -15,11 +16,18 @@ public class UserDeviceTokens {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "token", nullable = false, unique = true, length = 255)
-    private String token;
+    @Column(name = "fcm_token", nullable = false, unique = true, length = 255)
+    private String fcmToken;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "platform", length = 20)
-    private String platform;
+    private DevicePlatform platform;
+
+    @Column(name = "device_id", length = 255)
+    private String deviceId;
+
+    @Column(name = "app_version", length = 50)
+    private String appVersion;
 
     @Column(name = "is_active")
     private Boolean isActive = true;
