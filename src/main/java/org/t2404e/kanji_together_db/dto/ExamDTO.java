@@ -1,6 +1,8 @@
 package org.t2404e.kanji_together_db.dto;
 
 import lombok.Data;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -14,7 +16,9 @@ public class ExamDTO {
     private Integer passScore;   // Điểm đạt
     private Integer status;      // 1: Active, 0: Hidden
     private String targetRank;   // N1, N2... (Nếu có)
-
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private List<QuestionDTO> fullQuestions;
     // --- QUAN TRỌNG: Danh sách ID câu hỏi để lưu xuống DB ---
     private List<Long> questionIds;
 
