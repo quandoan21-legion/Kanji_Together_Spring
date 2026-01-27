@@ -30,19 +30,12 @@ public class QuestionsService {
     @Autowired
     private KanjiCharactersRepository kanjiRepository;
 
-    @Autowired
-    private ExamsRepository examsRepository;
-
-    /**
-     * Lấy danh sách câu hỏi tổng hợp với Phân trang, Tìm kiếm từ khóa, và Lọc theo Loại/Đề thi.
-     * Chức năng này thay thế hoàn toàn cho các hàm getAllActive, search, filterByType cũ.
-     */
     public Page<Questions> getAllQuestions(String keyword, String typeStr, Long examId, Pageable pageable) {
 
-        // 1. Xử lý Keyword (tránh null để Query không bị lỗi)
+        // 1. Xử lý Keyword
         String finalKeyword = (keyword == null) ? "" : keyword.trim();
 
-        // 2. Xử lý Loại câu hỏi (Chuyển String từ Frontend sang Enum an toàn)
+        // 2. Xử lý Loại câu hỏi
         QuestionType type = null;
         if (typeStr != null && !typeStr.trim().isEmpty()) {
             try {
@@ -90,22 +83,15 @@ public class QuestionsService {
     // --- CÁC PHƯƠNG THỨC HỖ TRỢ (PRIVATE HELPERS) ---
 
     private void mapDtoToEntity(QuestionDTO dto, Questions entity) {
-        // Ánh xạ các trường cơ bản
-        entity.setQuestionType(dto.getQuestionType());
+        if (dto.getQuestionType() != null) {
+            entity.setQuestionType(dto.getQuestionType());
+        }
 
         if (dto.getQuestionText() != null) entity.setQuestionText(dto.getQuestionText().trim());
         if (dto.getCorrectAnswer() != null) entity.setCorrectAnswer(dto.getCorrectAnswer().trim());
         if (dto.getWrongAnswer1() != null) entity.setWrongAnswer1(dto.getWrongAnswer1().trim());
         if (dto.getWrongAnswer2() != null) entity.setWrongAnswer2(dto.getWrongAnswer2().trim());
         if (dto.getWrongAnswer3() != null) entity.setWrongAnswer3(dto.getWrongAnswer3().trim());
-
-        // Liên kết với Đề thi (Exam)
-        if (dto.getExamId() != null) {
-            Exams exam = examsRepository.findById(dto.getExamId()).orElse(null);
-            entity.setExam(exam);
-        } else {
-            entity.setExam(null);
-        }
 
         // Liên kết với danh sách KanjiCharacters
         if (dto.getKanjiIds() != null) {
@@ -117,7 +103,6 @@ public class QuestionsService {
             }
         }
     }
-
     private void validateDTO(QuestionDTO dto) {
         Map<String, String> errors = new HashMap<>();
 

@@ -127,13 +127,20 @@ public class KanjiCharactersService {
 
         if (masterOpt.isPresent()) {
             entity = masterOpt.get();
-            // Nếu ACTIVE thì chỉ sửa bổ sung, nếu ẨN/XÓA thì sửa hết
-            if ("ACTIVE".equals(entity.getStatus()) && Boolean.TRUE.equals(entity.getIsActive())) {
-                updateSupplementaryFields(entity, dto);
-            } else {
-                updateFullEntityData(entity, dto);
+            String currentStatus = entity.getStatus();
+
+
+            // LOGIC MỚI: Chặn cả ACTIVE và HIDDEN. Chỉ cho phép đi tiếp nếu là DELETED.
+            if ("ACTIVE".equals(currentStatus) || "HIDDEN".equals(currentStatus)) {
+                Map<String, String> errors = new HashMap<>();
+                errors.put("kanji", "Chữ Kanji '" + dto.getKanji() + "' đã tồn tại (Trạng thái: " + currentStatus + "). Vui lòng tìm và sửa, không tạo mới!");
+                throw new CustomValidationException(errors);
             }
+
+            // Nếu xuống được đây nghĩa là status = DELETED -> Cho phép ghi đè để hồi sinh
+            updateFullEntityData(entity, dto);
         } else {
+            // Chưa có trong DB -> Tạo mới hoàn toàn
             entity = new KanjiCharacters();
             entity.setKanji(dto.getKanji());
             updateFullEntityData(entity, dto);

@@ -9,15 +9,14 @@ import org.springframework.stereotype.Repository;
 import org.t2404e.kanji_together_db.entity.Questions;
 import org.t2404e.kanji_together_db.enums.QuestionType;
 
-import java.util.List;
-
 @Repository
 public interface QuestionsRepository extends JpaRepository<Questions, Long> {
 
     @Query("SELECT DISTINCT q FROM Questions q " +
             "LEFT JOIN q.kanjiCharacters k " +
+            "LEFT JOIN q.exams e " + // [MỚI] Join bảng Exams mới
             "WHERE q.status = 1 " +
-            "AND (:examId IS NULL OR q.exam.id = :examId) " +
+            "AND (:examId IS NULL OR e.id = :examId) " +
             "AND (:type IS NULL OR q.questionType = :type) " +
             "AND (:keyword IS NULL OR :keyword = '' OR " +
             "   LOWER(q.questionText) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
