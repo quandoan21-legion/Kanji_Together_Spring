@@ -119,14 +119,17 @@ public class KanjiCharactersService {
     // 2. LOGIC TẠO/SỬA BỞI ADMIN
     // ==================================================================================
     public KanjiCharacterDTO create(KanjiCharacterDTO dto) {
+        // 1. Chuẩn hóa và Validate dữ liệu đầu vào
         normalizeData(dto);
         validateKanjiData(dto);
 
+        // 2. Tìm bản gốc bất kể trạng thái
         Optional<KanjiCharacters> masterOpt = repository.findFirstByKanji(dto.getKanji());
         KanjiCharacters entity;
 
         if (masterOpt.isPresent()) {
             entity = masterOpt.get();
+
             String currentStatus = entity.getStatus();
 
 
@@ -141,13 +144,16 @@ public class KanjiCharactersService {
             updateFullEntityData(entity, dto);
         } else {
             // Chưa có trong DB -> Tạo mới hoàn toàn
+
             entity = new KanjiCharacters();
             entity.setKanji(dto.getKanji());
             updateFullEntityData(entity, dto);
         }
 
+        // Sau khi Create hoặc Hồi sinh, luôn đặt về trạng thái ACTIVE
         entity.setIsActive(true);
         entity.setStatus("ACTIVE");
+
         return mapToDTO(repository.save(entity));
     }
 
