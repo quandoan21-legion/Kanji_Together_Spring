@@ -3,10 +3,11 @@ package org.t2404e.kanji_together_db.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.EqualsAndHashCode; // <--- [MỚI] Import
-import lombok.ToString;          // <--- [MỚI] Import
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+// Đảm bảo bạn đã có Enum này, nếu chưa thì tạo file Enum riêng hoặc dùng String
 import org.t2404e.kanji_together_db.enums.QuestionType;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ public class Questions {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Nếu bạn chưa tạo file Enum QuestionType, có thể đổi tạm thành String
     @Column(name = "question_type", nullable = false)
     @Enumerated(EnumType.STRING)
     private QuestionType questionType;
@@ -43,14 +45,17 @@ public class Questions {
     @Column(name = "status", nullable = false)
     private Integer status = 1;
 
-    // --- CÁC MỐI QUAN HỆ CẦN CHẶN LOMBOK ---
+    // --- CẬP NHẬT QUAN HỆ MANY-TO-MANY VỚI EXAMS ---
 
-    @ManyToOne
-    @JoinColumn(name = "exam_id")
-    @JsonIgnoreProperties("questions")
-    @ToString.Exclude          // [QUAN TRỌNG] Chặn vòng lặp toString
-    @EqualsAndHashCode.Exclude // [QUAN TRỌNG] Chặn vòng lặp hashCode
-    private Exams exam;
+    // [MỚI] Thay thế @ManyToOne cũ.
+    // Một câu hỏi có thể thuộc về nhiều bài thi (Mini, Super, Skibidi...)
+    @ManyToMany(mappedBy = "questions") // "questions" là tên biến List trong file Exams.java
+    @JsonIgnoreProperties("questions")  // Ngăn chặn vòng lặp JSON vô hạn khi gọi API
+    @ToString.Exclude                   // Chặn vòng lặp toString của Lombok
+    @EqualsAndHashCode.Exclude          // Chặn vòng lặp hashCode
+    private List<Exams> exams;
+
+    // --- CÁC MỐI QUAN HỆ KHÁC (GIỮ NGUYÊN) ---
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -59,8 +64,8 @@ public class Questions {
             inverseJoinColumns = @JoinColumn(name = "kanji_id")
     )
     @JsonIgnoreProperties("questions")
-    @ToString.Exclude          // [QUAN TRỌNG] Chặn vòng lặp toString
-    @EqualsAndHashCode.Exclude // [QUAN TRỌNG] Chặn vòng lặp hashCode
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<KanjiCharacters> kanjiCharacters;
 
     // --- AUDIT ---
