@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.t2404e.kanji_together_db.dto.ExamDTO;
+import org.t2404e.kanji_together_db.dto.QuestionDTO;
 import org.t2404e.kanji_together_db.entity.Exams;
 import org.t2404e.kanji_together_db.entity.Questions;
 import org.t2404e.kanji_together_db.enums.ExamType; // <--- Import từ package riêng
@@ -97,12 +98,27 @@ public class ExamsService {
         dto.setStatus(entity.getStatus());
         dto.setTargetRank(entity.getTargetRank());
 
+        // [SỬA ĐOẠN NÀY] Gọi đúng tên getter trong Entity
+        dto.setCreatedAt(entity.getCreateAt());
+        dto.setUpdatedAt(entity.getEditAt());
+
         if (entity.getQuestions() != null) {
             dto.setTotalQuestions(entity.getQuestions().size());
             dto.setQuestionIds(entity.getQuestions().stream()
                     .map(Questions::getId)
                     .collect(Collectors.toList()));
+
+            List<QuestionDTO> fullQ = entity.getQuestions().stream().map(q -> {
+                QuestionDTO qDto = new QuestionDTO();
+                qDto.setId(q.getId());
+                qDto.setQuestionText(q.getQuestionText());
+                qDto.setQuestionType(q.getQuestionType());
+                qDto.setCorrectAnswer(q.getCorrectAnswer()); // Nếu cần
+                return qDto;
+            }).collect(Collectors.toList());
+            dto.setFullQuestions(fullQ);
         }
+
         return dto;
     }
 }
