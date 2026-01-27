@@ -11,6 +11,8 @@ import org.t2404e.kanji_together_db.dto.QuestionDTO;
 import org.t2404e.kanji_together_db.entity.Questions;
 import org.t2404e.kanji_together_db.service.QuestionsService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/questions")
 @CrossOrigin(origins = "*")
@@ -43,6 +45,11 @@ public class QuestionsController {
     @GetMapping("/{id}")
     public ResponseEntity<Questions> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getDetail(id));
+    }
+
+    @GetMapping("/kanji/{kanjiId}")
+    public ResponseEntity<List<QuestionDTO>> getByKanjiId(@PathVariable Long kanjiId) {
+        return ResponseEntity.ok(service.getByKanjiId(kanjiId));
     }
 
     @PostMapping

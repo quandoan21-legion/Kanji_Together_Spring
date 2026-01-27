@@ -36,4 +36,8 @@ public interface QuestionsRepository extends JpaRepository<Questions, Long> {
 
     @Query(value = "SELECT kanji_id FROM kanji_characters_rel_question WHERE question_id = :questionId", nativeQuery = true)
     List<Long> findKanjiIdsByQuestionId(@Param("questionId") Long questionId);
+
+    @Query("SELECT DISTINCT q FROM Questions q JOIN q.kanjiCharacters k " +
+            "WHERE k.id = :kanjiId AND q.status = 1")
+    List<Questions> findActiveByKanjiId(@Param("kanjiId") Long kanjiId);
 }

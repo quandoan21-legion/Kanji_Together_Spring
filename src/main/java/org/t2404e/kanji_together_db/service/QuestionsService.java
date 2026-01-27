@@ -57,6 +57,17 @@ public class QuestionsService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy câu hỏi hoặc đã bị xóa"));
     }
 
+    public List<QuestionDTO> getByKanjiId(Long kanjiId) {
+        kanjiRepository.findById(kanjiId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Kanji"));
+        List<Questions> questions = repository.findActiveByKanjiId(kanjiId);
+        List<QuestionDTO> dtos = new ArrayList<>();
+        for (Questions question : questions) {
+            dtos.add(toDto(question));
+        }
+        return dtos;
+    }
+
     // --- CÁC HÀM THAY ĐỔI DỮ LIỆU (CREATE/UPDATE/DELETE) ---
 
     public Questions create(QuestionDTO dto) {
@@ -114,5 +125,25 @@ public class QuestionsService {
         if (!errors.isEmpty()) {
             throw new CustomValidationException(errors);
         }
+    }
+
+    private QuestionDTO toDto(Questions question) {
+        QuestionDTO dto = new QuestionDTO();
+        dto.setId(question.getId());
+        dto.setQuestionType(question.getQuestionType());
+        dto.setQuestionText(question.getQuestionText());
+        dto.setCorrectAnswer(question.getCorrectAnswer());
+        dto.setWrongAnswer1(question.getWrongAnswer1());
+        dto.setWrongAnswer2(question.getWrongAnswer2());
+        dto.setWrongAnswer3(question.getWrongAnswer3());
+        dto.setStatus(question.getStatus());
+        if (question.getKanjiCharacters() != null) {
+            List<Long> kanjiIds = new ArrayList<>();
+            for (KanjiCharacters kanji : question.getKanjiCharacters()) {
+                kanjiIds.add(kanji.getId());
+            }
+            dto.setKanjiIds(kanjiIds);
+        }
+        return dto;
     }
 }

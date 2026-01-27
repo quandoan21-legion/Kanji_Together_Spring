@@ -2,6 +2,8 @@ package org.t2404e.kanji_together_db.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -50,6 +53,33 @@ public class GlobalExceptionHandler {
         body.put("status", ex.getStatusCode().value());
         body.put("message", ex.getReason() != null ? ex.getReason() : "Lỗi hệ thống");
         return new ResponseEntity<>(body, ex.getStatusCode());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        Map<String, Object> body = new HashMap<>();
+        Map<String, String> errors = new HashMap<>();
+
+        body.put("status", 400);
+        body.put("message", "Dữ liệu nhập vào chưa đúng quy chuẩn!");
+
+        Throwable cause = ex.getCause();
+        if (cause instanceof InvalidFormatException invalidFormat) {
+            String field = invalidFormat.getPath().stream()
+                    .map(ref -> ref.getFieldName())
+                    .filter(name -> name != null && !name.isBlank())
+                    .collect(Collectors.joining("."));
+            String value = String.valueOf(invalidFormat.getValue());
+            if (field.isBlank()) {
+                field = "request";
+            }
+            errors.put(field, "Giá trị không hợp lệ: " + value);
+        } else {
+            errors.put("request", "Dữ liệu không hợp lệ hoặc sai định dạng");
+        }
+
+        body.put("errors", errors);
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)
