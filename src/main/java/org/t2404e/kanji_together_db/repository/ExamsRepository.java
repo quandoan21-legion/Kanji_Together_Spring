@@ -36,4 +36,17 @@ public interface ExamsRepository extends JpaRepository<Exams, Long> {
                                            @Param("type") ExamType type,
                                            @Param("start") LocalDateTime start,
                                            @Param("end") LocalDateTime end);
+
+    @Query("""
+            SELECT e
+            FROM Exams e
+            WHERE e.createBy = :creatorId
+              AND e.type = :type
+              AND e.createAt >= :start
+              AND e.createAt < :end
+            """)
+    Optional<Exams> findDailyExam(@Param("creatorId") Integer creatorId,
+                                  @Param("type") ExamType type,
+                                  @Param("start") LocalDateTime start,
+                                  @Param("end") LocalDateTime end);
 }

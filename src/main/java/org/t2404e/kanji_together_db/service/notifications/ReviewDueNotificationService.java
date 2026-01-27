@@ -11,17 +11,21 @@ import org.t2404e.kanji_together_db.entity.KanjiCharacters;
 import org.t2404e.kanji_together_db.entity.NotificationLog;
 import org.t2404e.kanji_together_db.entity.UserDeviceTokens;
 import org.t2404e.kanji_together_db.entity.Users;
+import org.t2404e.kanji_together_db.enums.ExamType;
 import org.t2404e.kanji_together_db.enums.NotificationStatus;
+import org.t2404e.kanji_together_db.repository.ExamsRepository;
 import org.t2404e.kanji_together_db.repository.KanjiCharactersRepository;
 import org.t2404e.kanji_together_db.repository.NotificationLogRepository;
 import org.t2404e.kanji_together_db.repository.UserDeviceTokensRepository;
 import org.t2404e.kanji_together_db.repository.UserKanjiMasteryRepository;
 import org.t2404e.kanji_together_db.repository.UsersRepository;
+import org.t2404e.kanji_together_db.service.DailyExamService;
 import org.t2404e.kanji_together_db.service.UserAttemptService;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -39,6 +43,8 @@ public class ReviewDueNotificationService {
     private final KanjiCharactersRepository kanjiCharactersRepository;
     private final UsersRepository usersRepository;
     private final UserAttemptService userAttemptService;
+    private final DailyExamService dailyExamService;
+    private final ExamsRepository examsRepository;
     private final FcmPushNotificationService fcmPushNotificationService;
 
     @Value("${notifications.review-due.dedup-hours:23}")
@@ -56,6 +62,8 @@ public class ReviewDueNotificationService {
                                         KanjiCharactersRepository kanjiCharactersRepository,
                                         UsersRepository usersRepository,
                                         UserAttemptService userAttemptService,
+                                        DailyExamService dailyExamService,
+                                        ExamsRepository examsRepository,
                                         FcmPushNotificationService fcmPushNotificationService) {
         this.userKanjiMasteryRepository = userKanjiMasteryRepository;
         this.userDeviceTokensRepository = userDeviceTokensRepository;
@@ -63,6 +71,8 @@ public class ReviewDueNotificationService {
         this.kanjiCharactersRepository = kanjiCharactersRepository;
         this.usersRepository = usersRepository;
         this.userAttemptService = userAttemptService;
+        this.dailyExamService = dailyExamService;
+        this.examsRepository = examsRepository;
         this.fcmPushNotificationService = fcmPushNotificationService;
     }
 
@@ -130,8 +140,16 @@ public class ReviewDueNotificationService {
         }
 
         String body = buildReminderBody(kanjiIds);
+        dailyExamService.createOrUpdateDailyExam(userId, due);
+        Long examId = getTodayDailyExamId(userId);
+        if (examId == null) {
+            result.setStatus("skipped");
+            result.setSkippedReason("no_daily_exam");
+            return result;
+        }
         Map<String, String> data = new HashMap<>();
-        data.put("type", "review_due");
+        data.put("type", "daily_exam");
+        data.put("examId", String.valueOf(examId));
         data.put("kanji_ids", kanjiIdString);
         data.put("count", String.valueOf(kanjiIds.size()));
 
@@ -306,5 +324,17 @@ public class ReviewDueNotificationService {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("Missing SHA-256", e);
         }
+    }
+
+    private Long getTodayDailyExamId(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        LocalDate today = LocalDate.now();
+        LocalDateTime start = today.atStartOfDay();
+        LocalDateTime end = start.plusDays(1);
+        return examsRepository.findDailyExam(userId.intValue(), ExamType.DAILY, start, end)
+                .map(exam -> exam.getId())
+                .orElse(null);
     }
 }
