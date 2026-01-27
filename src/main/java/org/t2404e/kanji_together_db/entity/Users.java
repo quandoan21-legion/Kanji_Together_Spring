@@ -36,6 +36,9 @@ public class Users {
     @Column(name = "has_entrance_exam")
     private Boolean hasEntranceExam;
 
+    @Column(name = "have_daily_exam")
+    private Boolean haveDailyExam;
+
     // Biến chuẩn camelCase, map cột snake_case
     @Column(name = "is_active")
     private Boolean isActive;

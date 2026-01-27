@@ -38,6 +38,7 @@ public class UserAttemptService {
     private final UserQuestionAttemptRepository userQuestionAttemptRepository;
     private final UserKanjiAttemptRepository userKanjiAttemptRepository;
     private final UserKanjiMasteryRepository userKanjiMasteryRepository;
+    private final DailyExamService dailyExamService;
     @Value("${spaced-repetition.next-review-immediate:false}")
     private boolean nextReviewImmediate;
 
@@ -46,13 +47,15 @@ public class UserAttemptService {
                               KanjiCharactersRepository kanjiCharactersRepository,
                               UserQuestionAttemptRepository userQuestionAttemptRepository,
                               UserKanjiAttemptRepository userKanjiAttemptRepository,
-                              UserKanjiMasteryRepository userKanjiMasteryRepository) {
+                              UserKanjiMasteryRepository userKanjiMasteryRepository,
+                              DailyExamService dailyExamService) {
         this.usersRepository = usersRepository;
         this.questionsRepository = questionsRepository;
         this.kanjiCharactersRepository = kanjiCharactersRepository;
         this.userQuestionAttemptRepository = userQuestionAttemptRepository;
         this.userKanjiAttemptRepository = userKanjiAttemptRepository;
         this.userKanjiMasteryRepository = userKanjiMasteryRepository;
+        this.dailyExamService = dailyExamService;
     }
 
     @Transactional
@@ -136,6 +139,13 @@ public class UserAttemptService {
             responses.add(toView(mastery));
         }
         return responses;
+    }
+
+    @Transactional
+    public List<KanjiMasteryView> getDueMasteryAndSyncDailyExam(Long userId, int limit) {
+        List<KanjiMasteryView> due = getDueMastery(userId, limit);
+        dailyExamService.createOrUpdateDailyExam(userId, due);
+        return due;
     }
 
     private UserKanjiMastery upsertAndApplyMastery(Users user, KanjiCharacters kanji, boolean correct, LocalDateTime now) {

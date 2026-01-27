@@ -158,6 +158,6 @@ public class AttemptController {
             @Parameter(description = "Maximum number of kanji to return")
             @RequestParam(defaultValue = "20") int limit
     ) {
-        return ResponseEntity.ok(userAttemptService.getDueMastery(userId, limit));
+        return ResponseEntity.ok(userAttemptService.getDueMasteryAndSyncDailyExam(userId, limit));
     }
 }
