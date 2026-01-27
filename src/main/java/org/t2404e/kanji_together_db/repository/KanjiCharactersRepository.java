@@ -24,20 +24,29 @@ public interface KanjiCharactersRepository extends JpaRepository<KanjiCharacters
     List<KanjiCharacters> findAllByIsActiveTrue();
     List<KanjiCharacters> findAllByIsActiveFalse();
     Optional<KanjiCharacters> findFirstByKanji(String kanji);
-    @Query("SELECT k FROM KanjiCharacters k WHERE " +
-            "(:keyword IS NULL OR :keyword = '' OR " +
-            " lower(k.kanji) LIKE lower(concat('%', :keyword, '%')) OR " +
-            " lower(k.meaning) LIKE lower(concat('%', :keyword, '%')) OR " +
-            " lower(k.translation) LIKE lower(concat('%', :keyword, '%')) OR " +
-            " lower(k.onPronunciation) LIKE lower(concat('%', :keyword, '%')) OR " +
-            " lower(k.kunPronunciation) LIKE lower(concat('%', :keyword, '%'))) " +
-            "AND " +
-            "(k.status IS NULL OR k.status <> 'DELETED') " +
-            "AND " +
-            "(:isActive IS NULL OR k.isActive = :isActive) " +
-            "AND " +
-            "(:status IS NULL OR :status = '' OR k.status = :status)")
-    List<KanjiCharacters> searchAndFilter(@Param("keyword") String keyword,
-                                          @Param("isActive") Boolean isActive,
-                                          @Param("status") String status);
+    // KanjiCharactersRepository.java
+
+    @Query(value = "SELECT * FROM kanji_characters k WHERE " +
+            "(:keyword IS NULL OR :keyword = '' OR k.kanji LIKE CONCAT('%', :keyword, '%') OR k.meaning LIKE CONCAT('%', :keyword, '%')) " +
+            "AND (k.status <> 'DELETED') " +
+            "AND (:isActive IS NULL OR k.is_active = :isActive) " +
+            "AND (:status IS NULL OR :status = '' OR k.status = :status) " +
+            "LIMIT :limit OFFSET :offset",
+            nativeQuery = true)
+    List<KanjiCharacters> searchAndFilterPaged(
+            @Param("keyword") String keyword,
+            @Param("isActive") Boolean isActive,
+            @Param("status") String status,
+            @Param("limit") int limit,
+            @Param("offset") int offset
+    );
+
+    @Query(value = "SELECT COUNT(*) FROM kanji_characters k WHERE " +
+            "(:keyword IS NULL OR :keyword = '' OR k.kanji LIKE %:keyword% OR k.meaning LIKE %:keyword%) " +
+            "AND (k.status <> 'DELETED') " +
+            "AND (:isActive IS NULL OR k.is_active = :isActive) " +
+            "AND (:status IS NULL OR :status = '' OR k.status = :status)", nativeQuery = true)
+    long countSearchAndFilter(@Param("keyword") String keyword,
+                              @Param("isActive") Boolean isActive,
+                              @Param("status") String status);
 }
