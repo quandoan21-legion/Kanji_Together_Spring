@@ -119,28 +119,40 @@ public class KanjiCharactersService {
     // 2. LOGIC TẠO/SỬA BỞI ADMIN
     // ==================================================================================
     public KanjiCharacterDTO create(KanjiCharacterDTO dto) {
+        // 1. Chuẩn hóa và Validate dữ liệu đầu vào
         normalizeData(dto);
         validateKanjiData(dto);
 
+        // 2. Tìm bản gốc bất kể trạng thái
         Optional<KanjiCharacters> masterOpt = repository.findFirstByKanji(dto.getKanji());
         KanjiCharacters entity;
 
         if (masterOpt.isPresent()) {
             entity = masterOpt.get();
-            // Nếu ACTIVE thì chỉ sửa bổ sung, nếu ẨN/XÓA thì sửa hết
-            if ("ACTIVE".equals(entity.getStatus()) && Boolean.TRUE.equals(entity.getIsActive())) {
-                updateSupplementaryFields(entity, dto);
-            } else {
-                updateFullEntityData(entity, dto);
+            String status = entity.getStatus();
+
+            // --- LOGIC KIỂM TRA TRÙNG LẶP ---
+            // Nếu chữ đang ACTIVE hoặc HIDDEN, không cho phép tạo/sửa từ trang "Create"
+            if ("ACTIVE".equals(status) || "HIDDEN".equals(status)) {
+                Map<String, String> errors = new HashMap<>();
+                errors.put("kanji", "Chữ Kanji '" + dto.getKanji() + "' đã tồn tại trong hệ thống (Trạng thái: " + status + ").");
+                throw new CustomValidationException(errors);
             }
+
+            // --- LOGIC HỒI SINH (DELETED) ---
+            // Nếu đã DELETED, cho phép ghi đè hoàn toàn để sử dụng lại ID cũ
+            updateFullEntityData(entity, dto);
         } else {
+            // --- LOGIC TẠO MỚI HOÀN TOÀN ---
             entity = new KanjiCharacters();
             entity.setKanji(dto.getKanji());
             updateFullEntityData(entity, dto);
         }
 
+        // Sau khi Create hoặc Hồi sinh, luôn đặt về trạng thái ACTIVE
         entity.setIsActive(true);
         entity.setStatus("ACTIVE");
+
         return mapToDTO(repository.save(entity));
     }
 
