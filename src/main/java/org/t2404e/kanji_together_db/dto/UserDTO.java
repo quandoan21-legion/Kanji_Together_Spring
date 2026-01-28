@@ -67,9 +67,13 @@ public class UserDTO {
 
     private String country;
 
-    // Để gán lớp ngay khi tạo user (Optional)
     @JsonProperty("clazz_id")
     private Long clazzId;
+
+    private Integer role;
+
+    // Thêm rank để hứng dữ liệu (Bronze, Silver, Gold...)
+    private String rank;
 
     // --- OUTPUT ONLY ---
     @JsonProperty("clazz_name")
