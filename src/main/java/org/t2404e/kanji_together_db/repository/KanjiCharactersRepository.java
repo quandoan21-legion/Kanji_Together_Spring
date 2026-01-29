@@ -8,7 +8,7 @@ import org.t2404e.kanji_together_db.entity.KanjiCharacters;
 import java.util.List;
 import java.util.Optional;
 
-public interface KanjiCharactersRepository extends JpaRepository<KanjiCharacters, Long>, KanjiCharactersRepositoryCustom {
+public interface KanjiCharactersRepository extends JpaRepository<KanjiCharacters, Long> {
 
     // [MỚI] Tìm bản gốc đang hoạt động (Chỉ có 1 bản Active cho mỗi chữ Kanji)
     Optional<KanjiCharacters> findByKanjiAndIsActiveTrue(String kanji);
@@ -24,29 +24,41 @@ public interface KanjiCharactersRepository extends JpaRepository<KanjiCharacters
     List<KanjiCharacters> findAllByIsActiveTrue();
     List<KanjiCharacters> findAllByIsActiveFalse();
     Optional<KanjiCharacters> findFirstByKanji(String kanji);
-    // KanjiCharactersRepository.java
+
+    // ========================================================
+    // KHU VỰC SỬA LỖI: THÊM ĐIỀU KIỆN LỌC NGÀY VÀO SQL
+    // ========================================================
 
     @Query(value = "SELECT * FROM kanji_characters k WHERE " +
             "(:keyword IS NULL OR :keyword = '' OR k.kanji LIKE CONCAT('%', :keyword, '%') OR k.meaning LIKE CONCAT('%', :keyword, '%')) " +
             "AND (k.status <> 'DELETED') " +
             "AND (:isActive IS NULL OR k.is_active = :isActive) " +
             "AND (:status IS NULL OR :status = '' OR k.status = :status) " +
-            "LIMIT :limit OFFSET :offset",
+            // --- 👇 DÒNG NÀY QUAN TRỌNG NHẤT: Thêm điều kiện lọc ngày vào đây ---
+            "AND (:createdAt IS NULL OR :createdAt = '' OR k.create_at LIKE CONCAT(:createdAt, '%')) " +
+            // -------------------------------------------------------------------
+            "ORDER BY k.id DESC LIMIT :limit OFFSET :offset", // Thêm ORDER BY k.id DESC để tin mới nhất lên đầu
             nativeQuery = true)
     List<KanjiCharacters> searchAndFilterPaged(
             @Param("keyword") String keyword,
             @Param("isActive") Boolean isActive,
             @Param("status") String status,
+            @Param("createdAt") String createdAt,
             @Param("limit") int limit,
             @Param("offset") int offset
     );
 
     @Query(value = "SELECT COUNT(*) FROM kanji_characters k WHERE " +
-            "(:keyword IS NULL OR :keyword = '' OR k.kanji LIKE %:keyword% OR k.meaning LIKE %:keyword%) " +
+            "(:keyword IS NULL OR :keyword = '' OR k.kanji LIKE CONCAT('%', :keyword, '%') OR k.meaning LIKE CONCAT('%', :keyword, '%')) " +
             "AND (k.status <> 'DELETED') " +
             "AND (:isActive IS NULL OR k.is_active = :isActive) " +
-            "AND (:status IS NULL OR :status = '' OR k.status = :status)", nativeQuery = true)
-    long countSearchAndFilter(@Param("keyword") String keyword,
-                              @Param("isActive") Boolean isActive,
-                              @Param("status") String status);
+            "AND (:status IS NULL OR :status = '' OR k.status = :status) " +
+            "AND (:createdAt IS NULL OR :createdAt = '' OR k.create_at LIKE CONCAT(:createdAt, '%'))",
+            nativeQuery = true)
+    long countSearchAndFilter(
+            @Param("keyword") String keyword,
+            @Param("isActive") Boolean isActive,
+            @Param("status") String status,
+            @Param("createdAt") String createdAt // Tham số ngày
+    );
 }

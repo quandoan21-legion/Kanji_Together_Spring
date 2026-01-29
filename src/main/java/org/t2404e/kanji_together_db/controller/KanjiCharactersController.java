@@ -25,12 +25,14 @@ public class KanjiCharactersController {
             @RequestParam(name = "is_active", required = false) Boolean isActive,
             @RequestParam(name = "status", required = false) String status,
             @RequestParam(name = "page", required = false) Integer page,
+            @RequestParam(name = "created_at", required = false) String createdAt,
             @RequestParam(name = "size", required = false) Integer size
-    ) {
-        String keyword = (search != null && !search.trim().isEmpty()) ? search : kanji;
 
+    ) {
+        System.out.println("DEBUG NGÀY: " + createdAt);
+        String keyword = (search != null && !search.trim().isEmpty()) ? search : kanji;
         Integer javaPage = (page != null) ? page : 0;
-        Map<String, Object> result = service.getAll(keyword, isActive, status, javaPage, size);
+        Map<String, Object> result = service.getAll(keyword, isActive, status,createdAt,javaPage, size);
         return ResponseEntity.ok(new ApiResponse<>(200, "Thành công", result));
     }
 

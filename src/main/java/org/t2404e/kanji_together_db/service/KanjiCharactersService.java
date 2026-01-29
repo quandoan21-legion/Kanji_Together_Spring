@@ -25,20 +25,25 @@ public class KanjiCharactersService {
 
     // KanjiCharactersService.java
 
-    public Map<String, Object> getAll(String keyword, Boolean isActive, String status, Integer page, Integer size) {
-        // 1. Cấu hình phân trang linh hoạt
+    // Trong KanjiCharactersService.java
+
+    public Map<String, Object> getAll(String keyword, Boolean isActive, String status, String createdAt, Integer page, Integer size) { // <--- 1. Thêm tham số createdAt
+        // 1. Cấu hình phân trang linh hoạt (Giữ nguyên)
         int finalLimit = (size != null) ? size : 10;
         Integer javaPage = (page != null) ? page : 0;
         int offset = finalLimit * javaPage;
 
-        // 2. Lấy danh sách 0 chữ (Dùng hàm 5 tham số trong Repo)
-        List<KanjiCharacters> list = repository.searchAndFilterPaged(keyword, isActive, status, finalLimit, offset);       List<KanjiCharacterDTO> dtos = list.stream().map(this::mapToDTO).collect(Collectors.toList());
+        // 2. Lấy danh sách (TRUYỀN THÊM createdAt VÀO ĐÂY)
+        List<KanjiCharacters> list = repository.searchAndFilterPaged(keyword, isActive, status, createdAt, finalLimit, offset);
 
-        // 3. Lấy TỔNG SỐ bản ghi (Cực kỳ quan trọng để hiện nút phân trang)
-        long totalElements = repository.countSearchAndFilter(keyword, isActive, status);
+        List<KanjiCharacterDTO> dtos = list.stream().map(this::mapToDTO).collect(Collectors.toList());
+
+        // 3. Lấy TỔNG SỐ bản ghi (TRUYỀN THÊM createdAt VÀO ĐÂY ĐỂ ĐẾM ĐÚNG)
+        long totalElements = repository.countSearchAndFilter(keyword, isActive, status, createdAt);
+
         int totalPages = (int) Math.ceil((double) totalElements / finalLimit);
 
-        // 4. Trả về Map cho Ruby bóc tách
+        // 4. Trả về Map cho Ruby bóc tách (Giữ nguyên)
         Map<String, Object> response = new HashMap<>();
         response.put("kanjis", dtos);
         response.put("totalElements", totalElements);
