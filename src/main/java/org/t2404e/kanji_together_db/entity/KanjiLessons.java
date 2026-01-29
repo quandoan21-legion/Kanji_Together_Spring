@@ -2,9 +2,7 @@ package org.t2404e.kanji_together_db.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
+import lombok.ToString;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,33 +10,26 @@ import java.util.List;
 @Table(name = "kanji_lessons")
 @Data
 public class KanjiLessons {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Nên để private
+    private Long id;
 
-    // Map với cột tên bài học trong DB
-    @Column(name = "name")
-    private String name;
+    @Column(name = "kanji", length = 50)
+    private String kanji;
 
     @Column(name = "JLPT")
     private Integer jlpt;
 
-    @Column(name = "lesson_description")
+    @Column(name = "lesson_description", columnDefinition = "TEXT") // Thêm TEXT để lưu mô tả dài
     private String lessonDescription;
 
-    @ManyToMany
-    @JoinTable(
-            name = "kanji_characters_rel_lesson",
-            joinColumns = @JoinColumn(name = "lesson_id"),
-            inverseJoinColumns = @JoinColumn(name = "kanji_id")
-    )
-    private List<KanjiCharacters> kanjiCharacters;
+    @Column(name = "status")
+    private String status = "ACTIVE";
 
-    @CreationTimestamp
-    @Column(name = "create_at", updatable = false)
+    @Column(name = "create_at")
     private LocalDateTime createAt;
 
-    @UpdateTimestamp
     @Column(name = "edit_at")
     private LocalDateTime editAt;
 
@@ -47,4 +38,24 @@ public class KanjiLessons {
 
     @Column(name = "edit_by")
     private Integer editBy;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "kanji_characters_rel_lesson",
+            joinColumns = @JoinColumn(name = "lesson_id"),
+            inverseJoinColumns = @JoinColumn(name = "kanji_id")
+    )
+    @ToString.Exclude
+    private List<KanjiCharacters> kanjiCharacters;
+
+    @PrePersist
+    protected void onCreate() {
+        createAt = LocalDateTime.now();
+        editAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        editAt = LocalDateTime.now();
+    }
 }
