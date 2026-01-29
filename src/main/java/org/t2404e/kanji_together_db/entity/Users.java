@@ -74,7 +74,7 @@ public class Users {
     private String country;
     @Column(name = "role", nullable = false, columnDefinition = "int default 0")
     private Integer role;
-    @Column(name = "rank")
+    @Column(name = "`rank`")
     private String rank;
     // --- TIMESTAMP FIELDS ---
     @UpdateTimestamp

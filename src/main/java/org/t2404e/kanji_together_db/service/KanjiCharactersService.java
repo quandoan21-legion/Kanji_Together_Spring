@@ -36,7 +36,7 @@ public class KanjiCharactersService {
         // 2. Lấy danh sách (TRUYỀN THÊM createdAt VÀO ĐÂY)
         List<KanjiCharacters> list = repository.searchAndFilterPaged(keyword, isActive, status, createdAt, finalLimit, offset);
 
-        List<KanjiCharacterDTO> dtos = list.stream().map(this::mapToDTO).collect(Collectors.toList());
+        List<Map<String, Object>> dtos = list.stream().map(this::mapToListDTO).collect(Collectors.toList());
 
         // 3. Lấy TỔNG SỐ bản ghi (TRUYỀN THÊM createdAt VÀO ĐÂY ĐỂ ĐẾM ĐÚNG)
         long totalElements = repository.countSearchAndFilter(keyword, isActive, status, createdAt);
@@ -396,6 +396,16 @@ public class KanjiCharactersService {
         dto.setCreateBy(entity.getCreateBy());
         dto.setEditBy(entity.getEditBy());
         dto.setStatus(entity.getStatus());
+        return dto;
+    }
+
+    private Map<String, Object> mapToListDTO(KanjiCharacters entity) {
+        Map<String, Object> dto = new HashMap<>();
+        dto.put("id", entity.getId());
+        dto.put("components", entity.getComponents());
+        dto.put("kun_pronunciation", entity.getKunPronunciation());
+        dto.put("on_pronunciation", entity.getOnPronunciation());
+        dto.put("meaning", entity.getMeaning());
         return dto;
     }
 }

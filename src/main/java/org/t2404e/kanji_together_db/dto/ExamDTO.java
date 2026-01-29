@@ -21,6 +21,8 @@ public class ExamDTO {
     private List<QuestionDTO> fullQuestions;
     // --- QUAN TRỌNG: Danh sách ID câu hỏi để lưu xuống DB ---
     private List<Long> questionIds;
+    // --- QUAN TRỌNG: Danh sách ID bài học để liên kết với Exam ---
+    private List<Long> lessonIds;
 
     // Để hiển thị ra ngoài (không cần load full câu hỏi cho nhẹ)
     private Integer totalQuestions;

@@ -1,5 +1,6 @@
 package org.t2404e.kanji_together_db.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
@@ -47,6 +48,16 @@ public class KanjiLessons {
     )
     @ToString.Exclude
     private List<KanjiCharacters> kanjiCharacters;
+
+    @ManyToMany(mappedBy = "lessons")
+    @JsonIgnore
+    @ToString.Exclude
+    private List<Exams> exams;
+
+    @ManyToOne
+    @JoinColumn(name = "course_id")
+    @JsonIgnore
+    private Courses course;
 
     @PrePersist
     protected void onCreate() {

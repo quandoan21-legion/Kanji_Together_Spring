@@ -10,9 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.t2404e.kanji_together_db.dto.ExamDTO;
 import org.t2404e.kanji_together_db.dto.QuestionDTO;
 import org.t2404e.kanji_together_db.entity.Exams;
+import org.t2404e.kanji_together_db.entity.KanjiLessons;
 import org.t2404e.kanji_together_db.entity.Questions;
 import org.t2404e.kanji_together_db.enums.ExamType; // <--- Import từ package riêng
 import org.t2404e.kanji_together_db.repository.ExamsRepository;
+import org.t2404e.kanji_together_db.repository.KanjiLessonsRepository;
 import org.t2404e.kanji_together_db.repository.QuestionsRepository;
 
 import java.util.ArrayList;
@@ -24,6 +26,7 @@ public class ExamsService {
 
     @Autowired private ExamsRepository examsRepository;
     @Autowired private QuestionsRepository questionsRepository;
+    @Autowired private KanjiLessonsRepository kanjiLessonsRepository;
 
     @Transactional
     public ExamDTO saveExam(ExamDTO dto) {
@@ -58,6 +61,13 @@ public class ExamsService {
         } else if (exam.getId() == null) {
             exam.setQuestions(new ArrayList<>());
             exam.setTotalQuestions(0);
+        }
+
+        if (dto.getLessonIds() != null) {
+            List<KanjiLessons> selectedLessons = kanjiLessonsRepository.findAllById(dto.getLessonIds());
+            exam.setLessons(selectedLessons);
+        } else if (exam.getId() == null) {
+            exam.setLessons(new ArrayList<>());
         }
 
         Exams saved = examsRepository.save(exam);
@@ -117,6 +127,12 @@ public class ExamsService {
                 return qDto;
             }).collect(Collectors.toList());
             dto.setFullQuestions(fullQ);
+        }
+
+        if (entity.getLessons() != null) {
+            dto.setLessonIds(entity.getLessons().stream()
+                    .map(KanjiLessons::getId)
+                    .collect(Collectors.toList()));
         }
 
         return dto;

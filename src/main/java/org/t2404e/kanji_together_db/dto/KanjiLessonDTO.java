@@ -14,8 +14,8 @@ public class KanjiLessonDTO {
 
     private Integer jlpt;
 
-    // --- QUAN TRỌNG 1: Ép nhận key "lessonDescription" ---
-    @JsonProperty("lessonDescription")
+    // --- QUAN TRỌNG 1: Ép nhận key "lesson_description" ---
+    @JsonProperty("lesson_description")
     private String lessonDescription;
     // -----------------------------------------------------
 
@@ -32,9 +32,12 @@ public class KanjiLessonDTO {
 
     // --- QUAN TRỌNG 2: BẠN ĐANG THIẾU CÁI NÀY ---
     // Phải thêm annotation này thì Java mới nhận được mảng ID từ Rails
-    @JsonProperty("kanjiIds")
+    @JsonProperty("kanji_ids")
     private List<Long> kanjiIds;
     // --------------------------------------------
+
+    @JsonProperty("exam_ids")
+    private List<Long> examIds;
 
     // Danh sách chi tiết trả về (Chứa kiến thức Kanji)
     private List<KanjiFullInfo> kanjiList;
@@ -44,17 +47,6 @@ public class KanjiLessonDTO {
     public static class KanjiFullInfo {
         private Long id;
         private String kanji;
-        private String onPronunciation;  // Âm On
-        private String kunPronunciation; // Âm Kun
-        private Integer numStrokes;      // Số nét
-        private Integer jlpt;            // Cấp độ
-        private String kanjiDescription; // Mô tả/Ghi nhớ
-        private String translation;      // Hán Việt
-        private String meaning;          // Nghĩa
-        private String radical;          // Bộ thủ
-        private String components;       // Thành phần bộ
-        private String writingImageUrl;  // Ảnh cách viết
-        private String vocabulary;       // Từ vựng liên quan
-        private String examples;         // Ví dụ câu
+        private Integer jlpt;
     }
 }

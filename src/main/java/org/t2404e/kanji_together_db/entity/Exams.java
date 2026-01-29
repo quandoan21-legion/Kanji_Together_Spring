@@ -39,8 +39,13 @@ public class Exams {
     @Column(name = "total_questions")
     private Integer totalQuestions;
 
-    @Column(name = "lesson_id")
-    private Long lessonId;
+    @ManyToMany
+    @JoinTable(
+            name = "exam_lessons",
+            joinColumns = @JoinColumn(name = "exam_id"),
+            inverseJoinColumns = @JoinColumn(name = "lesson_id")
+    )
+    private List<KanjiLessons> lessons;
 
     // --- QUAN HỆ MANY-TO-MANY ---
     @ManyToMany

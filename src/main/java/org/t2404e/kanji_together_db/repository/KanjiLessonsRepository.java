@@ -42,4 +42,6 @@ public interface KanjiLessonsRepository extends JpaRepository<KanjiLessons, Long
             @Param("status") String status,
             @Param("createdAt") String createdAt
     );
+
+    List<KanjiLessons> findByCourseId(Long courseId);
 }

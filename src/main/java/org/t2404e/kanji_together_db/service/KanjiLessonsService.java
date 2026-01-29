@@ -4,11 +4,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.t2404e.kanji_together_db.dto.KanjiLessonDTO;
 import org.t2404e.kanji_together_db.entity.KanjiCharacters;
+import org.t2404e.kanji_together_db.entity.Exams;
 import org.t2404e.kanji_together_db.entity.KanjiLessons;
+import org.t2404e.kanji_together_db.entity.Questions;
+import org.t2404e.kanji_together_db.enums.ExamType;
+import org.t2404e.kanji_together_db.repository.ExamsRepository;
 import org.t2404e.kanji_together_db.repository.KanjiCharactersRepository;
 import org.t2404e.kanji_together_db.repository.KanjiLessonsRepository;
+import org.t2404e.kanji_together_db.repository.QuestionsRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +29,12 @@ public class KanjiLessonsService {
     @Autowired
     private KanjiCharactersRepository kanjiRepo;
 
+    @Autowired
+    private ExamsRepository examsRepository;
+
+    @Autowired
+    private QuestionsRepository questionsRepository;
+
     // --- 1. LẤY DANH SÁCH ---
     public Map<String, Object> getAll(String keyword, Integer jlpt, String status, String createdAt, Integer page, Integer size) {
         int finalLimit = (size != null) ? size : 10;
@@ -30,7 +42,7 @@ public class KanjiLessonsService {
         int offset = finalLimit * javaPage;
 
         List<KanjiLessons> entities = repository.searchAndFilterPaged(keyword, jlpt, status, createdAt, finalLimit, offset);
-        List<KanjiLessonDTO> dtos = entities.stream().map(this::mapToDTO).collect(Collectors.toList());
+        List<Map<String, Object>> dtos = entities.stream().map(this::mapToListDTO).collect(Collectors.toList());
 
         long totalElements = repository.countSearchAndFilter(keyword, jlpt, status, createdAt);
         int totalPages = (int) Math.ceil((double) totalElements / finalLimit);
@@ -83,10 +95,41 @@ public class KanjiLessonsService {
             System.out.println(">>> DEBUG: Không có Kanji nào được chọn.");
         }
 
+        if (dto.getExamIds() != null) {
+            List<Exams> exams = examsRepository.findAllById(dto.getExamIds());
+            entity.setExams(exams);
+            System.out.println(">>> DEBUG: Liên kết " + exams.size() + " exam với bài học.");
+        }
+
         KanjiLessons saved = repository.save(entity);
         System.out.println(">>> DEBUG: Đã lưu thành công bài học ID: " + saved.getId());
 
-        return mapToDTO(saved);
+        Exams savedExam = null;
+        Exams exam = buildLessonExam(saved, dto);
+        if (exam != null) {
+            savedExam = examsRepository.save(exam);
+            List<Exams> updatedExams = new ArrayList<>();
+            if (saved.getExams() != null) {
+                updatedExams.addAll(saved.getExams());
+            }
+            updatedExams.add(savedExam);
+            saved.setExams(updatedExams);
+            saved = repository.save(saved);
+        }
+
+        KanjiLessonDTO response = mapToDTO(saved);
+        if (savedExam != null) {
+            List<Long> examIds = response.getExamIds();
+            if (examIds == null) {
+                examIds = new ArrayList<>();
+            }
+            if (!examIds.contains(savedExam.getId())) {
+                examIds.add(savedExam.getId());
+            }
+            response.setExamIds(examIds);
+        }
+
+        return response;
     }
 
     // --- 3. CẬP NHẬT (CÓ LOG DEBUG) ---
@@ -123,12 +166,18 @@ public class KanjiLessonsService {
                 System.out.println(">>> DEBUG: Đã update " + kanjis.size() + " kanji cho bài học.");
             }
 
+            if (newData.getExamIds() != null) {
+                List<Exams> exams = examsRepository.findAllById(newData.getExamIds());
+                lesson.setExams(exams);
+                System.out.println(">>> DEBUG: Đã update " + exams.size() + " exam cho bài học.");
+            }
+
             return mapToDTO(repository.save(lesson));
         }).orElseThrow(() -> new RuntimeException("Không tìm thấy bài học với ID: " + id));
     }
 
     public KanjiLessonDTO getDetail(Long id) {
-        return repository.findById(id).map(this::mapToDTO).orElse(null);
+        return repository.findById(id).map(this::mapToDetailDTO).orElse(null);
     }
 
     public void delete(Long id) {
@@ -157,27 +206,43 @@ public class KanjiLessonsService {
                     .map(KanjiCharacters::getId)
                     .collect(Collectors.toList()));
 
-            // 2. List Full Info
-            List<KanjiLessonDTO.KanjiFullInfo> fullInfos = entity.getKanjiCharacters().stream().map(k -> {
+            // 2. List Minimal Info (id + kanji)
+            List<KanjiLessonDTO.KanjiFullInfo> minimalInfos = entity.getKanjiCharacters().stream().map(k -> {
                 KanjiLessonDTO.KanjiFullInfo info = new KanjiLessonDTO.KanjiFullInfo();
                 info.setId(k.getId());
                 info.setKanji(k.getKanji());
-                info.setOnPronunciation(k.getOnPronunciation());
-                info.setKunPronunciation(k.getKunPronunciation());
-                info.setNumStrokes(k.getNumStrokes());
                 info.setJlpt(k.getJlpt());
-                info.setKanjiDescription(k.getKanjiDescription());
-                info.setTranslation(k.getTranslation());
-                info.setMeaning(k.getMeaning());
-                info.setRadical(k.getRadical());
-                info.setComponents(k.getComponents());
-                info.setWritingImageUrl(k.getWritingImageUrl());
-                info.setVocabulary(k.getVocabulary());
-                info.setExamples(k.getExamples());
                 return info;
             }).collect(Collectors.toList());
 
-            dto.setKanjiList(fullInfos);
+            dto.setKanjiList(minimalInfos);
+        }
+
+        if (entity.getExams() != null) {
+            dto.setExamIds(entity.getExams().stream()
+                    .map(Exams::getId)
+                    .collect(Collectors.toList()));
+        }
+
+        return dto;
+    }
+
+    private Map<String, Object> mapToListDTO(KanjiLessons entity) {
+        Map<String, Object> dto = new HashMap<>();
+        dto.put("id", entity.getId());
+        dto.put("jlpt", entity.getJlpt());
+        dto.put("lesson_description", entity.getLessonDescription());
+        return dto;
+    }
+
+    private KanjiLessonDTO mapToDetailDTO(KanjiLessons entity) {
+        KanjiLessonDTO dto = mapToDTO(entity);
+
+        if (entity.getKanjiCharacters() != null && !entity.getKanjiCharacters().isEmpty()) {
+            String combinedKanji = entity.getKanjiCharacters().stream()
+                    .map(KanjiCharacters::getKanji)
+                    .collect(Collectors.joining(""));
+            dto.setKanji(combinedKanji);
         }
 
         return dto;
@@ -193,5 +258,36 @@ public class KanjiLessonsService {
 
         entity.setStatus(dto.getStatus());
         return entity;
+    }
+
+    private Exams buildLessonExam(KanjiLessons lesson, KanjiLessonDTO dto) {
+        Exams exam = new Exams();
+        String lessonDesc = dto.getLessonDescription() != null ? dto.getLessonDescription().trim() : "";
+        if (lessonDesc.isEmpty()) {
+            lessonDesc = "Lesson " + lesson.getId();
+        }
+        exam.setName(lessonDesc + " Exam");
+        exam.setType(ExamType.MINI);
+        exam.setStatus(1);
+        exam.setLessons(List.of(lesson));
+
+        if (dto.getKanjiIds() != null && !dto.getKanjiIds().isEmpty()) {
+            List<Questions> questions = questionsRepository.findActiveByKanjiIds(dto.getKanjiIds());
+            exam.setQuestions(questions);
+            exam.setTotalQuestions(questions.size());
+        } else {
+            exam.setQuestions(new ArrayList<>());
+            exam.setTotalQuestions(0);
+        }
+
+        int totalQuestions = exam.getTotalQuestions() != null ? exam.getTotalQuestions() : 0;
+        int passScore = totalQuestions == 0 ? 0 : (int) Math.ceil(totalQuestions * 0.75);
+        exam.setDuration(15);
+        exam.setPassScore(passScore);
+        if (lesson.getJlpt() != null) {
+            exam.setTargetRank("N" + lesson.getJlpt());
+        }
+
+        return exam;
     }
 }
