@@ -22,26 +22,30 @@ public class KanjiCharactersService {
     @Autowired
     private KanjiCharactersRepository repository;
 
-    // Lấy danh sách (Giữ nguyên)
-    public List<KanjiCharacterDTO> getAll(String keyword, Boolean isActive, String status) {
-        List<KanjiCharacters> list = repository.searchAndFilter(keyword, isActive, status);
-        return list.stream().map(this::mapToDTO).collect(Collectors.toList());
-    }
 
-    // Lấy danh sách với phân trang kiểu page (page size = 20)
-    public List<KanjiCharacterDTO> getAll(String keyword, Boolean isActive, String status, Integer page) {
-        if (page == null) {
-            return getAll(keyword, isActive, status);
-        }
+    // KanjiCharactersService.java
 
-        if (page < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "page must be >= 0");
-        }
+    public Map<String, Object> getAll(String keyword, Boolean isActive, String status, Integer page, Integer size) {
+        // 1. Cấu hình phân trang linh hoạt
+        int finalLimit = (size != null) ? size : 10;
+        Integer javaPage = (page != null) ? page : 0;
+        int offset = finalLimit * javaPage;
 
-        int limit = 20;
-        int offset = limit * page;
-        List<KanjiCharacters> list = repository.searchAndFilter(keyword, isActive, status, limit, offset);
-        return list.stream().map(this::mapToDTO).collect(Collectors.toList());
+        // 2. Lấy danh sách 0 chữ (Dùng hàm 5 tham số trong Repo)
+        List<KanjiCharacters> list = repository.searchAndFilterPaged(keyword, isActive, status, finalLimit, offset);       List<KanjiCharacterDTO> dtos = list.stream().map(this::mapToDTO).collect(Collectors.toList());
+
+        // 3. Lấy TỔNG SỐ bản ghi (Cực kỳ quan trọng để hiện nút phân trang)
+        long totalElements = repository.countSearchAndFilter(keyword, isActive, status);
+        int totalPages = (int) Math.ceil((double) totalElements / finalLimit);
+
+        // 4. Trả về Map cho Ruby bóc tách
+        Map<String, Object> response = new HashMap<>();
+        response.put("kanjis", dtos);
+        response.put("totalElements", totalElements);
+        response.put("totalPages", totalPages);
+        response.put("currentPage", (page != null ? page : 0) + 1);
+
+        return response;
     }
 
     // Lấy danh sách đóng góp của 1 chữ (Dành cho Admin xem lịch sử)
@@ -122,11 +126,9 @@ public class KanjiCharactersService {
         // 1. Chuẩn hóa và Validate dữ liệu đầu vào
         normalizeData(dto);
         validateKanjiData(dto);
-
         // 2. Tìm bản gốc bất kể trạng thái
         Optional<KanjiCharacters> masterOpt = repository.findFirstByKanji(dto.getKanji());
         KanjiCharacters entity;
-
         if (masterOpt.isPresent()) {
             entity = masterOpt.get();
 
@@ -164,13 +166,7 @@ public class KanjiCharactersService {
         KanjiCharacters entity = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy Kanji để sửa"));
 
-        // Kiểm tra logic phân quyền sửa dựa trên trạng thái hiện tại của ID này
-        if ("ACTIVE".equals(entity.getStatus()) && Boolean.TRUE.equals(entity.getIsActive())) {
-            updateSupplementaryFields(entity, dto);
-        } else {
-            updateFullEntityData(entity, dto);
-        }
-
+        updateFullEntityData(entity, dto);
         if (dto.getIsActive() != null) entity.setIsActive(dto.getIsActive());
         if (dto.getStatus() != null) entity.setStatus(dto.getStatus());
 

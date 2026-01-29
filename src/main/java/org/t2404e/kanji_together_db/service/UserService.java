@@ -1,6 +1,8 @@
 package org.t2404e.kanji_together_db.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -22,13 +24,23 @@ public class UserService {
     @Autowired
     private ClazzRepository clazzRepository;
 
-    // CREATE USER (Logic chính)
-    public UserDTO createUser(UserDTO request) {
-        // 1. Check trùng Email
-        if (usersRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email đã tồn tại trong hệ thống");
-        }
+    /**
+     * LẤY DANH SÁCH USER CÓ BỘ LỌC VÀ PHÂN TRANG (Dùng cho Admin)
+     */
+    public Page<UserDTO> getFilteredUsers(String name, String email, Boolean active, Pageable pageable) {
+        Page<Users> usersPage = usersRepository.findByFilters(name, email, active, pageable);
+        return usersPage.map(this::mapToDTO);
+    }
 
+    // --- GIỮ NGUYÊN CÁC LOGIC CRUD DƯỚI ĐÂY ---
+
+    public UserDTO createUser(UserDTO request) {
+        if (usersRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email đã tồn tại");
+        }
+        if (usersRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username '" + request.getUsername() + "' đã tồn tại!");
+        }
         Users user = new Users();
         user.setName(request.getName());
         user.setUsername(request.getUsername());
@@ -36,8 +48,6 @@ public class UserService {
         user.setAvatarUrl(request.getAvatarUrl());
         user.setPhoneNumber(request.getPhoneNumber());
         user.setEmail(request.getEmail());
-
-        // 2. Set Default Values (Nếu null thì lấy mặc định)
         user.setHasEntranceExam(request.getHasEntranceExam() != null ? request.getHasEntranceExam() : false);
         user.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);
         user.setIsVerified(request.getIsVerified() != null ? request.getIsVerified() : false);
@@ -51,18 +61,21 @@ public class UserService {
         user.setPostalCode(request.getPostalCode());
         user.setCountry(request.getCountry());
 
-        // 3. Gán lớp (nếu có)
+        // Role: Mặc định là 0 (User) nếu null
+        user.setRole(request.getRole() != null ? request.getRole() : 0);
+
+        // --- THÊM MỚI: Xử lý Rank ---
+        // Nếu không chọn rank, mặc định set là "BRONZE"
+        user.setRank(request.getRank() != null ? request.getRank() : "BRONZE");
+
         if (request.getClazzId() != null) {
             Clazz clazz = clazzRepository.findById(request.getClazzId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lớp học không tồn tại"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lớp không tồn tại"));
             user.setClazz(clazz);
         }
 
-        Users savedUser = usersRepository.save(user);
-        return mapToDTO(savedUser);
+        return mapToDTO(usersRepository.save(user));
     }
-
-    // --- Các hàm khác giữ nguyên hoặc cập nhật mapToDTO ---
 
     public List<UserDTO> getAllUsers() {
         return usersRepository.findAll().stream().map(this::mapToDTO).collect(Collectors.toList());
@@ -70,7 +83,7 @@ public class UserService {
 
     public UserDTO getUserById(Long id) {
         Users user = usersRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy user ID: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ID không tồn tại: " + id));
         return mapToDTO(user);
     }
 
@@ -80,15 +93,14 @@ public class UserService {
 
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (usersRepository.findByEmail(request.getEmail()).isPresent()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email đã tồn tại trong hệ thống");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email đã tồn tại");
             }
         }
         if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
             if (usersRepository.findByUsername(request.getUsername()).isPresent()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username đã tồn tại trong hệ thống");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username đã tồn tại");
             }
         }
-
         if (request.getName() != null) user.setName(request.getName());
         if (request.getUsername() != null) user.setUsername(request.getUsername());
         if (request.getDisplayName() != null) user.setDisplayName(request.getDisplayName());
@@ -98,16 +110,14 @@ public class UserService {
         if (request.getHasEntranceExam() != null) user.setHasEntranceExam(request.getHasEntranceExam());
         if (request.getIsVerified() != null) user.setIsVerified(request.getIsVerified());
         if (request.getIsActive() != null) user.setIsActive(request.getIsActive());
-        if (request.getLastLoginAt() != null) user.setLastLoginAt(request.getLastLoginAt());
         if (request.getPasswordHash() != null) user.setPasswordHash(request.getPasswordHash());
-        if (request.getAuthProvider() != null) user.setAuthProvider(request.getAuthProvider());
-        if (request.getStartDate() != null) user.setStartDate(request.getStartDate());
-        if (request.getAddressLine1() != null) user.setAddressLine1(request.getAddressLine1());
-        if (request.getCity() != null) user.setCity(request.getCity());
-        if (request.getState() != null) user.setState(request.getState());
-        if (request.getPostalCode() != null) user.setPostalCode(request.getPostalCode());
-        if (request.getCountry() != null) user.setCountry(request.getCountry());
-        // Logic update lớp
+
+        // Cho phép cập nhật role
+        if (request.getRole() != null) user.setRole(request.getRole());
+
+        // --- THÊM MỚI: Cho phép cập nhật Rank ---
+        if (request.getRank() != null) user.setRank(request.getRank());
+
         if (request.getClazzId() != null) {
             Clazz clazz = clazzRepository.findById(request.getClazzId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lớp không tồn tại"));
@@ -124,7 +134,6 @@ public class UserService {
         usersRepository.save(user);
     }
 
-    // Helper Convert
     private UserDTO mapToDTO(Users entity) {
         UserDTO dto = new UserDTO();
         dto.setId(entity.getId());
@@ -147,6 +156,12 @@ public class UserService {
         dto.setCountry(entity.getCountry());
         dto.setCreateBy(entity.getCreateBy());
         dto.setEditBy(entity.getEditBy());
+
+        // Trả về role cho client/admin xem
+        dto.setRole(entity.getRole());
+
+        // --- THÊM MỚI: Trả về Rank ---
+        dto.setRank(entity.getRank());
 
         if (entity.getClazz() != null) {
             dto.setClazzId(entity.getClazz().getId());

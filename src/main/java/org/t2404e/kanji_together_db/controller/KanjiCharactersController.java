@@ -9,6 +9,7 @@ import org.t2404e.kanji_together_db.dto.KanjiCharacterDTO;
 import org.t2404e.kanji_together_db.service.KanjiCharactersService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/kanjis")
@@ -17,18 +18,20 @@ public class KanjiCharactersController {
     @Autowired
     private KanjiCharactersService service;
 
-    // 1. LẤY DANH SÁCH (HỖ TRỢ LỌC ACTIVE, PENDING, REJECTED...)
     @GetMapping
-    public ResponseEntity<ApiResponse<List<KanjiCharacterDTO>>> getAll(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getAll(
             @RequestParam(name = "search", required = false) String search,
             @RequestParam(name = "kanji", required = false) String kanji,
             @RequestParam(name = "is_active", required = false) Boolean isActive,
-            @RequestParam(name = "status", required = false) String status, // Tham số quan trọng để lọc PENDING
-            @RequestParam(name = "page", required = false) Integer page
+            @RequestParam(name = "status", required = false) String status,
+            @RequestParam(name = "page", required = false) Integer page,
+            @RequestParam(name = "size", required = false) Integer size
     ) {
-        String keyword = (search != null) ? search : kanji;
-        // Gọi Service với đủ 3 tham số lọc
-        return ResponseEntity.ok(new ApiResponse<>(200, "Lấy danh sách thành công", service.getAll(keyword, isActive, status, page)));
+        String keyword = (search != null && !search.trim().isEmpty()) ? search : kanji;
+
+        Integer javaPage = (page != null) ? page : 0;
+        Map<String, Object> result = service.getAll(keyword, isActive, status, javaPage, size);
+        return ResponseEntity.ok(new ApiResponse<>(200, "Thành công", result));
     }
 
     // 2. LẤY LỊCH SỬ ĐÓNG GÓP (MỚI - Dùng cho Admin xem ai đã đóng góp cho chữ này)
