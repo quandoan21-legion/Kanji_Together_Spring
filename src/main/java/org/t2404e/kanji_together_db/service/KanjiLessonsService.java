@@ -152,13 +152,10 @@ public class KanjiLessonsService {
         return repository.findById(id).map(lesson -> {
             lesson.setKanji(newData.getKanji());
             lesson.setJlpt(newData.getJlpt());
-
             // QUAN TRỌNG: Cập nhật mô tả
             lesson.setLessonDescription(newData.getLessonDescription());
-
             lesson.setStatus(newData.getStatus());
             lesson.setEditAt(LocalDateTime.now());
-
             // QUAN TRỌNG: Cập nhật Kanji
             if (newData.getKanjiIds() != null) {
                 List<KanjiCharacters> kanjis = kanjiRepo.findAllById(newData.getKanjiIds());
@@ -190,16 +187,12 @@ public class KanjiLessonsService {
         dto.setId(entity.getId());
         dto.setKanji(entity.getKanji());
         dto.setJlpt(entity.getJlpt());
-
-        // Map mô tả
         dto.setLessonDescription(entity.getLessonDescription());
-
         dto.setStatus(entity.getStatus());
         dto.setCreateAt(entity.getCreateAt());
         dto.setEditAt(entity.getEditAt());
         dto.setCreateBy(entity.getCreateBy());
         dto.setEditBy(entity.getEditBy());
-
         if (entity.getKanjiCharacters() != null) {
             // 1. List ID
             dto.setKanjiIds(entity.getKanjiCharacters().stream()
@@ -214,7 +207,6 @@ public class KanjiLessonsService {
                 info.setJlpt(k.getJlpt());
                 return info;
             }).collect(Collectors.toList());
-
             dto.setKanjiList(minimalInfos);
         }
 
@@ -231,23 +223,19 @@ public class KanjiLessonsService {
         Map<String, Object> dto = new HashMap<>();
         dto.put("id", entity.getId());
         dto.put("jlpt", entity.getJlpt());
-        dto.put("lesson_description", entity.getLessonDescription());
+        dto.put("lessonDescription", entity.getLessonDescription());
+        dto.put("kanji", entity.getKanji());
+        dto.put("status", entity.getStatus());
+        dto.put("createAt", entity.getCreateAt());
+        dto.put("editAt", entity.getEditAt());
         return dto;
     }
+
+    // Trong file KanjiLessonsService.java
 
     private KanjiLessonDTO mapToDetailDTO(KanjiLessons entity) {
-        KanjiLessonDTO dto = mapToDTO(entity);
-
-        if (entity.getKanjiCharacters() != null && !entity.getKanjiCharacters().isEmpty()) {
-            String combinedKanji = entity.getKanjiCharacters().stream()
-                    .map(KanjiCharacters::getKanji)
-                    .collect(Collectors.joining(""));
-            dto.setKanji(combinedKanji);
-        }
-
-        return dto;
+        return mapToDTO(entity);
     }
-
     private KanjiLessons mapToEntity(KanjiLessonDTO dto) {
         KanjiLessons entity = new KanjiLessons();
         entity.setKanji(dto.getKanji());

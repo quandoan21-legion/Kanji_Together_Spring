@@ -26,6 +26,7 @@ public class KanjiCharacters {
     @Column(name = "on_pronunciation")
     private String onPronunciation;
 
+
     @Column(name = "kun_pronunciation")
     private String kunPronunciation;
 
@@ -73,7 +74,7 @@ public class KanjiCharacters {
     @OneToMany(mappedBy = "kanjiCharacter", cascade = CascadeType.ALL)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @JsonIgnore // <--- [ĐÃ THÊM] Chặn vòng lặp qua Câu chuyện (Stories)
+    @JsonIgnore //
     private List<KanjiStories> stories;
 
     @ManyToMany(mappedBy = "kanjiCharacters")
