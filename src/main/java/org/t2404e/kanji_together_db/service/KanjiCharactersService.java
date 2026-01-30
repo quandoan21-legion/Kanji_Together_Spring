@@ -406,6 +406,22 @@ public class KanjiCharactersService {
         dto.put("kun_pronunciation", entity.getKunPronunciation());
         dto.put("on_pronunciation", entity.getOnPronunciation());
         dto.put("meaning", entity.getMeaning());
+        dto.put("jlpt", entity.getJlpt());
+        dto.put("translation",entity.getTranslation());
+        dto.put("kanji",entity.getKanji());
+        dto.put("vocabulary",entity.getVocabulary());
+        dto.put("examples",entity.getExamples());
+        dto.put("radical",entity.getRadical());
+        dto.put("writing_image_url",entity.getWritingImageUrl());
+        dto.put("num_strokes",entity.getNumStrokes());
+        dto.put("is_active",entity.getIsActive());
+        dto.put("status",entity.getStatus());
+        dto.put("create_at",entity.getCreateAt());
+        dto.put("stories",entity.getStories());
+        dto.put("edit_at",entity.getCreateAt());
+        dto.put("create_by",entity.getCreateBy());
+        dto.put("edit_by",entity.getEditBy());
+        dto.put("kanji_description", entity.getKanjiDescription());
         return dto;
     }
 }

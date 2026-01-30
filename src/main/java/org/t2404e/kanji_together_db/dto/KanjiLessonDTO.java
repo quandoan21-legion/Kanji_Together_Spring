@@ -14,7 +14,6 @@ public class KanjiLessonDTO {
 
     private Integer jlpt;
 
-    // --- QUAN TRỌNG 1: Ép nhận key "lesson_description" ---
     @JsonProperty("lesson_description")
     private String lessonDescription;
     // -----------------------------------------------------
@@ -30,7 +29,7 @@ public class KanjiLessonDTO {
     private Integer createBy;
     private Integer editBy;
 
-    // --- QUAN TRỌNG 2: BẠN ĐANG THIẾU CÁI NÀY ---
+
     // Phải thêm annotation này thì Java mới nhận được mảng ID từ Rails
     @JsonProperty("kanji_ids")
     private List<Long> kanjiIds;
