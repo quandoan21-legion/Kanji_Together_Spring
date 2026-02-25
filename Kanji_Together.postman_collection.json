@@ -1,0 +1,924 @@
+{
+  "info": {
+    "name": "Kanji Together Spring API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"username\": \"testuser\",\n  \"display_name\": \"Test User\",\n  \"avatar_url\": \"https://example.com/avatar.png\",\n  \"phone_number\": \"0123456789\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/auth/register"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/auth/login"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"REFRESH_TOKEN_HERE\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/auth/refresh"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{url}}/api/v1/auth/logout"
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"current_password\": \"password123\",\n  \"new_password\": \"newpassword123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/auth/change-password"
+          },
+          "response": []
+        },
+        {
+          "name": "Request OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/auth/request-otp"
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"otp_code\": \"123456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/auth/verify-otp"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "item": [
+        {
+          "name": "Get All Courses",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/courses"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Course Detail",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/courses/{{courseId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"N5 Starter\",\n  \"description\": \"Introductory kanji course\",\n  \"category\": \"JLPT\",\n  \"thumbnail_url\": \"https://example.com/thumb.png\",\n  \"cover_image_url\": \"https://example.com/cover.png\",\n  \"time_to_finish\": \"2 weeks\",\n  \"lesson_ids\": [10, 11, 12]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/courses"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Course",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"N5 Starter Updated\",\n  \"description\": \"Updated description\",\n  \"category\": \"JLPT\",\n  \"thumbnail_url\": \"https://example.com/thumb2.png\",\n  \"cover_image_url\": \"https://example.com/cover2.png\",\n  \"time_to_finish\": \"3 weeks\",\n  \"lesson_ids\": [12, 13]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/courses/{{courseId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Course",
+          "request": {
+            "method": "DELETE",
+            "url": "{{url}}/api/v1/courses/{{courseId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Lessons to Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lesson_ids\": [14, 15]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/courses/{{courseId}}/lessons"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Lessons",
+      "item": [
+        {
+          "name": "Get Lessons",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/lessons?search=&jlpt=&status=&created_at=&page=&size="
+          },
+          "response": []
+        },
+        {
+          "name": "Get Lesson Detail",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/lessons/{{lessonId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Lesson",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kanji\": \"KANJI\",\n  \"jlpt\": 5,\n  \"lesson_description\": \"Basic kanji lesson\",\n  \"status\": \"ACTIVE\",\n  \"kanji_ids\": [1, 2, 3],\n  \"exam_ids\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/lessons"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Lesson",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kanji\": \"KANJI\",\n  \"jlpt\": 5,\n  \"lesson_description\": \"Updated lesson description\",\n  \"status\": \"ACTIVE\",\n  \"kanji_ids\": [1, 2, 3],\n  \"exam_ids\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/lessons/{{lessonId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Lesson",
+          "request": {
+            "method": "DELETE",
+            "url": "{{url}}/api/v1/lessons/{{lessonId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Kanji Characters",
+      "item": [
+        {
+          "name": "Get Kanji List",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/kanjis?search=&kanji=&is_active=&status=&page=&created_at=&size="
+          },
+          "response": []
+        },
+        {
+          "name": "Get Kanji Contributions",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/kanjis/contributions?kanji=KANJI"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Kanji Detail",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/kanjis/{{kanjiId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Kanji (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kanji\": \"KANJI\",\n  \"on_pronunciation\": \"ON\",\n  \"kun_pronunciation\": \"KUN\",\n  \"num_strokes\": 13,\n  \"jlpt\": 5,\n  \"kanji_description\": \"Sample description\",\n  \"translation\": \"Translation\",\n  \"meaning\": \"Meaning\",\n  \"radical\": \"RADICAL\",\n  \"components\": \"COMPONENTS\",\n  \"writing_image_url\": \"https://example.com/kanji.png\",\n  \"is_active\": true,\n  \"status\": \"ACTIVE\",\n  \"vocabulary\": \"VOCAB\",\n  \"examples\": \"EXAMPLE\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/kanjis"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Kanji (User)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kanji\": \"KANJI\",\n  \"on_pronunciation\": \"ON\",\n  \"kun_pronunciation\": \"KUN\",\n  \"num_strokes\": 6,\n  \"jlpt\": 5,\n  \"kanji_description\": \"User submitted kanji\",\n  \"translation\": \"Translation\",\n  \"meaning\": \"Meaning\",\n  \"radical\": \"RADICAL\",\n  \"components\": \"COMPONENTS\",\n  \"writing_image_url\": \"https://example.com/kanji2.png\",\n  \"is_active\": true,\n  \"status\": \"PENDING\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/kanjis/submit"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Kanji",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kanji\": \"KANJI\",\n  \"meaning\": \"Updated meaning\",\n  \"status\": \"ACTIVE\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/kanjis/{{kanjiId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Kanji Contribution",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kanji\": \"KANJI\",\n  \"meaning\": \"Approved meaning\",\n  \"status\": \"APPROVED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/kanjis/{{kanjiId}}/approve"
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Kanji Contribution",
+          "request": {
+            "method": "PUT",
+            "url": "{{url}}/api/v1/kanjis/{{kanjiId}}/reject"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Kanji",
+          "request": {
+            "method": "DELETE",
+            "url": "{{url}}/api/v1/kanjis/{{kanjiId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Kanji Attempts",
+      "item": [
+        {
+          "name": "Get Kanji Attempts",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/kanji/{{kanjiId}}/attempts?userId={{userId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Questions",
+      "item": [
+        {
+          "name": "Get Questions",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/questions?keyword=&type=&exam_id=&page=0&size=10"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Question Detail",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/questions/{{questionId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Questions by Kanji",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/questions/kanji/{{kanjiId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Question",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question_type\": \"MULTI_CHOICE\",\n  \"question_text\": \"What is the meaning of KANJI?\",\n  \"correct_answer\": \"Translation\",\n  \"wrong_answer_1\": \"Wrong 1\",\n  \"wrong_answer_2\": \"Wrong 2\",\n  \"wrong_answer_3\": \"Wrong 3\",\n  \"exam_id\": 1,\n  \"kanji_ids\": [1],\n  \"status\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/questions"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Question",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question_text\": \"Updated question text\",\n  \"correct_answer\": \"Translation\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/questions/{{questionId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Question",
+          "request": {
+            "method": "DELETE",
+            "url": "{{url}}/api/v1/questions/{{questionId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Exams",
+      "item": [
+        {
+          "name": "Create or Update Exam",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"N5 Mini Exam\",\n  \"type\": \"MINI\",\n  \"duration\": 15,\n  \"passScore\": 8,\n  \"status\": 1,\n  \"targetRank\": \"N5\",\n  \"questionIds\": [1, 2, 3],\n  \"lessonIds\": [10]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/exams"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Exams",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/exams?keyword=&type=&page=0&size=10"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Exam Detail",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/exams/{{examId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Exam",
+          "request": {
+            "method": "DELETE",
+            "url": "{{url}}/api/v1/exams/{{examId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Attempts and Mastery",
+      "item": [
+        {
+          "name": "Submit Attempt",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"questionId\": 1,\n  \"correct\": true,\n  \"selectedAnswer\": \"A\",\n  \"timeSpentMs\": 18000\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/attempts"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Batch Attempts",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attempts\": [\n    {\n      \"userId\": 1,\n      \"questionId\": 1,\n      \"correct\": true\n    },\n    {\n      \"userId\": 1,\n      \"questionId\": 2,\n      \"correct\": false\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/attempts/batch"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Kanji Mastery",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/users/{{userId}}/kanji/{{kanjiId}}/mastery"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Due Reviews",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/review/due?userId={{userId}}&limit=20"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Kanji Stories",
+      "item": [
+        {
+          "name": "Get Kanji Stories",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/kanji-stories?status=&kanji=&kanjiId=&page=0"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Kanji Story Detail",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/kanji-stories/{{storyId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Kanji Story",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kanji_story\": \"Approved story\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/kanji-stories/{{storyId}}/approve"
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Kanji Story",
+          "request": {
+            "method": "PUT",
+            "url": "{{url}}/api/v1/kanji-stories/{{storyId}}/reject?reason=Not+enough+detail&status=REJECTED"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Kanji Story",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kanji_id\": 1,\n  \"kanji_text\": \"KANJI\",\n  \"kanji_story\": \"Story content\",\n  \"status\": \"PENDING\",\n  \"user_email\": \"user@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/kanji-stories"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Kanji Story",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kanji_story\": \"Updated story content\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/kanji-stories/{{storyId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Kanji Story",
+          "request": {
+            "method": "DELETE",
+            "url": "{{url}}/api/v1/kanji-stories/{{storyId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Kanji",
+      "item": [
+        {
+          "name": "Generate AI Story",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kanji\": \"KANJI\",\n  \"custom_prompt\": \"Create a short mnemonic story.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/ai-kanji/generate"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Users",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/users?name=&email=&active=&page=0&size=10"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Detail",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/users/{{userId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"username\": \"testuser\",\n  \"display_name\": \"Test User\",\n  \"avatar_url\": \"https://example.com/avatar.png\",\n  \"phone_number\": \"0123456789\",\n  \"email\": \"user@example.com\",\n  \"password_hash\": \"password123\",\n  \"clazz_id\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/users"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated User\",\n  \"display_name\": \"Updated User\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/users/{{userId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": "{{url}}/api/v1/users/{{userId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clazz",
+      "item": [
+        {
+          "name": "Create Clazz",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Class A\",\n  \"description\": \"Beginner class\",\n  \"is_active\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/clazz"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Clazz Detail",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/clazz/{{clazzId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Clazz List",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/clazz?q=&is_active=&page=0&size=20"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Clazz",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Class A Updated\",\n  \"description\": \"Updated description\",\n  \"is_active\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/clazz/{{clazzId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Clazz",
+          "request": {
+            "method": "DELETE",
+            "url": "{{url}}/api/v1/clazz/{{clazzId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Devices",
+      "item": [
+        {
+          "name": "Register Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcm_token\": \"TOKEN_HERE\",\n  \"platform\": \"ANDROID\",\n  \"device_id\": \"device-123\",\n  \"app_version\": \"1.0.0\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/devices/register"
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Device Token",
+          "request": {
+            "method": "DELETE",
+            "url": "{{url}}/api/v1/devices/{{token}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Device Tokens",
+      "item": [
+        {
+          "name": "Register Device Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 1,\n  \"fcm_token\": \"TOKEN_HERE\",\n  \"platform\": \"ANDROID\",\n  \"is_active\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/device-tokens"
+          },
+          "response": []
+        },
+        {
+          "name": "List Device Tokens",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/v1/device-tokens?userId={{userId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Device Token",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 1,\n  \"fcm_token\": \"TOKEN_HERE\",\n  \"platform\": \"ANDROID\",\n  \"is_active\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/device-tokens/deactivate"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Kanjis",
+      "item": [
+        {
+          "name": "Create User Kanji",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kanji\": \"KANJI\",\n  \"meaning\": \"Meaning\",\n  \"jlpt\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/user/kanjis"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Send Due Notification",
+          "request": {
+            "method": "POST",
+            "url": "{{url}}/api/notifications/send/{{userId}}?ignoreDedup=false"
+          },
+          "response": []
+        },
+        {
+          "name": "Notification History",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/notifications/history/{{userId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Test Notification",
+          "request": {
+            "method": "GET",
+            "url": "{{url}}/api/notifications/test/{{userId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Send Failed Kanji Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"title\": \"Review failed kanji\",\n  \"maxKanji\": 10,\n  \"deviceToken\": \"TOKEN_HERE\",\n  \"accessToken\": \"ACCESS_TOKEN_HERE\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{url}}/api/v1/notifications/failed-kanji"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "url", "value": "http://localhost:8080" },
+    { "key": "courseId", "value": "1" },
+    { "key": "lessonId", "value": "1" },
+    { "key": "kanjiId", "value": "1" },
+    { "key": "questionId", "value": "1" },
+    { "key": "examId", "value": "1" },
+    { "key": "userId", "value": "1" },
+    { "key": "storyId", "value": "1" },
+    { "key": "clazzId", "value": "1" },
+    { "key": "token", "value": "TOKEN_HERE" }
+  ]
+}

@@ -96,12 +96,17 @@ public class GlobalExceptionHandler {
 
         body.put("status", 409); // Conflict
         body.put("message", "Lỗi xung đột dữ liệu!");
+        
+        String errorMsg = ex.getMessage() != null ? ex.getMessage() : "";
+        System.err.println("[DataIntegrityViolationException] " + errorMsg);
 
         // Kiểm tra xem có phải lỗi trùng lặp Kanji không
-        if (ex.getMessage() != null && ex.getMessage().contains("uc_kanji_char")) {
+        if (errorMsg.contains("uc_kanji_char")) {
             errors.put("kanji", "Chữ Kanji này đã tồn tại trong hệ thống (Master)!");
+        } else if (errorMsg.contains("uk_user_kanji")) {
+            errors.put("mastery", "Chữ này đã được học rồi, hệ thống sẽ cập nhật tiến độ.");
         } else {
-            errors.put("database", "Vi phạm ràng buộc dữ liệu hoặc khóa ngoại.");
+            errors.put("database", "Vi phạm ràng buộc dữ liệu hoặc khóa ngoại. Chi tiết: " + errorMsg);
         }
 
         body.put("errors", errors);

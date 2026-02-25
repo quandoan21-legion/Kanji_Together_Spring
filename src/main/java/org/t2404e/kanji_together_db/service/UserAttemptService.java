@@ -77,6 +77,7 @@ public class UserAttemptService {
         questionAttempt.setSelectedAnswer(request.getSelectedAnswer());
         questionAttempt.setTimeSpentMs(request.getTimeSpentMs());
         questionAttempt.setAnsweredAt(answeredAt);
+        questionAttempt.setIsExam(false);
         UserQuestionAttempt savedAttempt = userQuestionAttemptRepository.save(questionAttempt);
 
         List<Long> kanjiIds = questionsRepository.findKanjiIdsByQuestionId(question.getId());
@@ -149,7 +150,7 @@ public class UserAttemptService {
     }
 
     private UserKanjiMastery upsertAndApplyMastery(Users user, KanjiCharacters kanji, boolean correct, LocalDateTime now) {
-        UserKanjiMastery mastery = userKanjiMasteryRepository.findForUpdate(user.getId(), kanji.getId())
+        UserKanjiMastery mastery = userKanjiMasteryRepository.findByUser_IdAndKanji_Id(user.getId(), kanji.getId())
                 .orElse(null);
 
         if (mastery == null) {
@@ -157,7 +158,7 @@ public class UserAttemptService {
             try {
                 userKanjiMasteryRepository.saveAndFlush(mastery);
             } catch (DataIntegrityViolationException ex) {
-                mastery = userKanjiMasteryRepository.findForUpdate(user.getId(), kanji.getId())
+                mastery = userKanjiMasteryRepository.findByUser_IdAndKanji_Id(user.getId(), kanji.getId())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "Xung đột tạo mastery"));
             }
         }

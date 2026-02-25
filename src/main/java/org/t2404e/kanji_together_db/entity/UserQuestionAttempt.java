@@ -48,4 +48,7 @@ public class UserQuestionAttempt {
 
     @Column(name = "answered_at", nullable = false)
     private LocalDateTime answeredAt;
+
+    @Column(name = "is_exam", nullable = false)
+    private Boolean isExam;
 }

@@ -131,27 +131,31 @@ public class KanjiCharactersService {
         // 1. Chuẩn hóa và Validate dữ liệu đầu vào
         normalizeData(dto);
         validateKanjiData(dto);
-        // 2. Tìm bản gốc bất kể trạng thái
-        Optional<KanjiCharacters> masterOpt = repository.findFirstByKanji(dto.getKanji());
+        List<KanjiCharacters> existing = repository.findAllByKanji(dto.getKanji());
         KanjiCharacters entity;
-        if (masterOpt.isPresent()) {
-            entity = masterOpt.get();
-
-            String currentStatus = entity.getStatus();
-
-
-            // LOGIC MỚI: Chặn cả ACTIVE và HIDDEN. Chỉ cho phép đi tiếp nếu là DELETED.
-            if ("ACTIVE".equals(currentStatus) || "HIDDEN".equals(currentStatus)) {
+        if (!existing.isEmpty()) {
+            Optional<KanjiCharacters> activeOrHidden = existing.stream()
+                    .filter(item -> "ACTIVE".equals(item.getStatus()) || "HIDDEN".equals(item.getStatus()))
+                    .findFirst();
+            if (activeOrHidden.isPresent()) {
                 Map<String, String> errors = new HashMap<>();
-                errors.put("kanji", "Chữ Kanji '" + dto.getKanji() + "' đã tồn tại (Trạng thái: " + currentStatus + "). Vui lòng tìm và sửa, không tạo mới!");
+                String status = activeOrHidden.get().getStatus();
+                errors.put("kanji", "Chữ Kanji '" + dto.getKanji() + "' đã tồn tại (Trạng thái: " + status + "). Vui lòng tìm và sửa, không tạo mới!");
                 throw new CustomValidationException(errors);
             }
 
-            // Nếu xuống được đây nghĩa là status = DELETED -> Cho phép ghi đè để hồi sinh
-            updateFullEntityData(entity, dto);
+            Optional<KanjiCharacters> deleted = existing.stream()
+                    .filter(item -> "DELETED".equals(item.getStatus()))
+                    .findFirst();
+            if (deleted.isPresent()) {
+                entity = deleted.get();
+                updateFullEntityData(entity, dto);
+            } else {
+                entity = new KanjiCharacters();
+                entity.setKanji(dto.getKanji());
+                updateFullEntityData(entity, dto);
+            }
         } else {
-            // Chưa có trong DB -> Tạo mới hoàn toàn
-
             entity = new KanjiCharacters();
             entity.setKanji(dto.getKanji());
             updateFullEntityData(entity, dto);
@@ -182,6 +186,22 @@ public class KanjiCharactersService {
     public KanjiCharacterDTO createForUser(KanjiCharacterDTO dto) {
         normalizeData(dto);
         validateKanjiOnly(dto);
+
+        List<KanjiCharacters> existing = repository.findAllByKanji(dto.getKanji());
+        boolean hasMaster = existing.stream()
+                .anyMatch(item -> "ACTIVE".equals(item.getStatus()) || "HIDDEN".equals(item.getStatus()));
+        if (hasMaster) {
+            Map<String, String> errors = new HashMap<>();
+            errors.put("kanji", "Chữ Kanji '" + dto.getKanji() + "' đã tồn tại trong hệ thống. Vui lòng tìm và sửa, không tạo mới!");
+            throw new CustomValidationException(errors);
+        }
+
+        boolean hasPending = existing.stream().anyMatch(item -> "PENDING".equals(item.getStatus()));
+        if (hasPending) {
+            Map<String, String> errors = new HashMap<>();
+            errors.put("kanji", "Chữ Kanji '" + dto.getKanji() + "' đã được gửi trước đó, vui lòng chờ duyệt!");
+            throw new CustomValidationException(errors);
+        }
 
         KanjiCharacters pendingEntity = new KanjiCharacters();
         pendingEntity.setKanji(dto.getKanji());
@@ -402,7 +422,9 @@ public class KanjiCharactersService {
     private Map<String, Object> mapToListDTO(KanjiCharacters entity) {
         Map<String, Object> dto = new HashMap<>();
         dto.put("id", entity.getId());
-        dto.put("components", entity.getComponents());
+        dto.put("kanji", entity.getKanji());
+        dto.put("status", entity.getStatus());
+        dto.put("is_active", entity.getIsActive());
         dto.put("kun_pronunciation", entity.getKunPronunciation());
         dto.put("on_pronunciation", entity.getOnPronunciation());
         dto.put("meaning", entity.getMeaning());

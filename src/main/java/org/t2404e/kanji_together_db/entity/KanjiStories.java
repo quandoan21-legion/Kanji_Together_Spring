@@ -71,7 +71,7 @@ public class KanjiStories {
     @Column(name = "reject_reason", columnDefinition = "TEXT")
     private String rejectReason;
     @ManyToOne
-    @JoinColumn(name = "kanji_id", nullable = true)
+    @JoinColumn(name = "kanji_id", nullable = false)
     @JsonIgnore
     private KanjiCharacters kanjiCharacter;
 }
