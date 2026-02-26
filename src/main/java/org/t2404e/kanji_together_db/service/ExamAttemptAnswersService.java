@@ -8,6 +8,7 @@ import org.t2404e.kanji_together_db.dto.ExamAttemptAnswerRequest;
 import org.t2404e.kanji_together_db.dto.ExamAttemptAnswerResponse;
 import org.t2404e.kanji_together_db.entity.ExamAttemptAnswers;
 import org.t2404e.kanji_together_db.entity.ExamResults;
+import org.t2404e.kanji_together_db.entity.KanjiCharacters;
 import org.t2404e.kanji_together_db.entity.Questions;
 import org.t2404e.kanji_together_db.entity.Users;
 import org.t2404e.kanji_together_db.exception.CustomValidationException;
@@ -35,6 +36,9 @@ public class ExamAttemptAnswersService {
     @Autowired
     private UsersRepository usersRepository;
 
+    @Autowired
+    private UserKanjiMasteryService masteryService;
+
     public ExamAttemptAnswerResponse create(ExamAttemptAnswerRequest request) {
         validateRequest(request);
 
@@ -58,6 +62,14 @@ public class ExamAttemptAnswersService {
         attempt.timeTakenMs = request.getTimeTakenMs();
 
         ExamAttemptAnswers saved = examAttemptAnswersRepository.save(attempt);
+        
+        // Update mastery for all kanji characters in this question
+        if (answerUser != null && question.getKanjiCharacters() != null && !question.getKanjiCharacters().isEmpty()) {
+            for (KanjiCharacters kanji : question.getKanjiCharacters()) {
+                masteryService.updateMastery(answerUser.getId(), kanji.getId(), resolution.isCorrect);
+            }
+        }
+        
         long attemptCount = examAttemptAnswersRepository.countByUser_IdAndQuestion_Id(
                 answerUser.getId(),
                 question.getId()

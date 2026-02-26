@@ -59,4 +59,7 @@ public class KanjiStoryDTO {
     private String userKunyomi;
     @JsonProperty("reject_reason")
     private String rejectReason;
+
+    @JsonProperty("approval_status")
+    private String approvalStatus;
 }

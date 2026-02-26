@@ -70,6 +70,10 @@ public class KanjiStories {
 
     @Column(name = "reject_reason", columnDefinition = "TEXT")
     private String rejectReason;
+
+    @Column(name = "approval_status")
+    private String approvalStatus = "pending";
+
     @ManyToOne
     @JoinColumn(name = "kanji_id", nullable = false)
     @JsonIgnore

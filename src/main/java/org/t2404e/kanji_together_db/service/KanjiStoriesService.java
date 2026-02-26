@@ -293,6 +293,12 @@ public class KanjiStoriesService {
         story.setStatus("pending");
         story.setIsActive(true);
         story.setUser(user);
+        story.setApprovalStatus(dto.getApprovalStatus() != null ? dto.getApprovalStatus() : "pending");
+        
+        // If approval_status is "approved", set status to "approved"
+        if ("approved".equalsIgnoreCase(story.getApprovalStatus())) {
+            story.setStatus("approved");
+        }
         
         return mapToDTO(storyRepo.save(story));
     }
@@ -303,6 +309,13 @@ public class KanjiStoriesService {
         if (dto.getKanjiStory() != null) story.setKanjiStory(dto.getKanjiStory());
         if (dto.getStatus() != null) story.setStatus(dto.getStatus());
         if (dto.getKanjiText() != null) story.setKanjiText(dto.getKanjiText());
+        if (dto.getApprovalStatus() != null) {
+            story.setApprovalStatus(dto.getApprovalStatus());
+            // If approval_status is "approved", set status to "approved"
+            if ("approved".equalsIgnoreCase(dto.getApprovalStatus())) {
+                story.setStatus("approved");
+            }
+        }
         return mapToDTO(storyRepo.save(story));
     }
 
@@ -323,6 +336,7 @@ public class KanjiStoriesService {
         dto.setIsActive(entity.getIsActive());
         dto.setCreateAt(entity.getCreateAt());
         dto.setRejectReason(entity.getRejectReason());
+        dto.setApprovalStatus(entity.getApprovalStatus());
         if (entity.getUser() != null) dto.setUserEmail(entity.getUser().getEmail());
 
         if (entity.getKanjiCharacter() != null) {

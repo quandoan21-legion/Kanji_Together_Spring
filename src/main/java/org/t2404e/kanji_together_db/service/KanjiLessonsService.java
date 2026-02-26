@@ -230,8 +230,11 @@ public class KanjiLessonsService {
     private Map<String, Object> mapToListDTO(KanjiLessons entity) {
         Map<String, Object> dto = new HashMap<>();
         dto.put("id", entity.getId());
+        dto.put("kanji", entity.getKanji());
         dto.put("jlpt", entity.getJlpt());
         dto.put("lesson_description", entity.getLessonDescription());
+        dto.put("status", entity.getStatus());
+        dto.put("create_at", entity.getCreateAt());
         return dto;
     }
 
